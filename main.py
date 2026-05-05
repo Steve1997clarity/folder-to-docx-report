@@ -101,13 +101,13 @@ def create_docx_with_images_header_footer(folder_path, header_image_path, bottom
                 image_path = os.path.join(root, f)
                 try:
                     with Image.open(image_path) as img:
-                        # Resize to max 800px wide for demo (faster generation, smaller DOCX)
-                        if img.width > 800:
-                            ratio = 800 / img.width
-                            new_size = (800, int(img.height * ratio))
+                        # Resize to max 600px wide for demo (smaller DOCX, faster download)
+                        if img.width > 600:
+                            ratio = 600 / img.width
+                            new_size = (600, int(img.height * ratio))
                             img = img.resize(new_size, Image.LANCZOS)
                         stream = BytesIO()
-                        img.convert('RGB').save(stream, format='JPEG', quality=75)
+                        img.convert('RGB').save(stream, format='JPEG', quality=55)
                         stream.seek(0)
                     valid_images.append((stream, f))
                 except Exception as e:
@@ -895,4 +895,4 @@ def index():
 
 if __name__ == '__main__':
     _pregenerate_demos()
-    app.run(debug=True, port=11312, host="0.0.0.0")
+    app.run(debug=False, port=11312, host="0.0.0.0")
