@@ -93,6 +93,29 @@ def create_docx_with_images_header_footer(folder_path, header_image_path, bottom
         run = header_para.add_run("Header Image Not Found")
         run.font.size = Pt(10)
 
+    # --- Body: Company logo at top of every page ---
+    if os.path.exists(header_image_path):
+        logo_para = doc.add_paragraph()
+        logo_para.alignment = WD_ALIGN_PARAGRAPH.LEFT
+        try:
+            logo_run = logo_para.add_run()
+            logo_run.add_picture(header_image_path, width=Inches(2.5))
+        except Exception:
+            logo_para.add_run("Company Logo")
+    # Add a thin line separator after the logo
+    separator = doc.add_paragraph()
+    separator.paragraph_format.space_before = Pt(4)
+    separator.paragraph_format.space_after = Pt(12)
+    sep_pPr = separator._element.get_or_add_pPr()
+    pBdr = OxmlElement('w:pBdr')
+    bottom_border = OxmlElement('w:bottom')
+    bottom_border.set(qn('w:val'), 'single')
+    bottom_border.set(qn('w:sz'), '4')
+    bottom_border.set(qn('w:space'), '1')
+    bottom_border.set(qn('w:color'), '999999')
+    pBdr.append(bottom_border)
+    sep_pPr.append(pBdr)
+
     # Body: scan for JPEG images (resize for demo to keep output small)
     valid_images = []
     for root, dirs, files in os.walk(folder_path):
@@ -134,7 +157,31 @@ def create_docx_with_images_header_footer(folder_path, header_image_path, bottom
             para.text = img_name
             para.paragraph_format.space_after = Pt(12)
 
-    # Footer
+    # --- Body: Contact info at bottom ---
+    # Add a thin line separator before the footer
+    sep2 = doc.add_paragraph()
+    sep2.paragraph_format.space_before = Pt(12)
+    sep2.paragraph_format.space_after = Pt(4)
+    sep2_pPr = sep2._element.get_or_add_pPr()
+    pBdr2 = OxmlElement('w:pBdr')
+    bottom_border2 = OxmlElement('w:bottom')
+    bottom_border2.set(qn('w:val'), 'single')
+    bottom_border2.set(qn('w:sz'), '4')
+    bottom_border2.set(qn('w:space'), '1')
+    bottom_border2.set(qn('w:color'), '999999')
+    pBdr2.append(bottom_border2)
+    sep2_pPr.append(pBdr2)
+
+    if os.path.exists(bottom_image_path):
+        footer_body_para = doc.add_paragraph()
+        footer_body_para.alignment = WD_ALIGN_PARAGRAPH.CENTER
+        try:
+            frun = footer_body_para.add_run()
+            frun.add_picture(bottom_image_path, height=Cm(1.08))
+        except Exception:
+            footer_body_para.add_run("Contact Information")
+
+    # Also keep header/footer sections for print view
     footer_section = section.footer
     for para in footer_section.paragraphs:
         p = para._element
