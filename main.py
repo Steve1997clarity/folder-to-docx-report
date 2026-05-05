@@ -93,7 +93,7 @@ def create_docx_with_images_header_footer(folder_path, header_image_path, bottom
         run = header_para.add_run("Header Image Not Found")
         run.font.size = Pt(10)
 
-    # Body: scan for JPEG images
+    # Body: scan for JPEG images (resize for demo to keep output small)
     valid_images = []
     for root, dirs, files in os.walk(folder_path):
         for f in sorted(files):
@@ -101,8 +101,13 @@ def create_docx_with_images_header_footer(folder_path, header_image_path, bottom
                 image_path = os.path.join(root, f)
                 try:
                     with Image.open(image_path) as img:
+                        # Resize to max 800px wide for demo (faster generation, smaller DOCX)
+                        if img.width > 800:
+                            ratio = 800 / img.width
+                            new_size = (800, int(img.height * ratio))
+                            img = img.resize(new_size, Image.LANCZOS)
                         stream = BytesIO()
-                        img.convert('RGB').save(stream, format='JPEG')
+                        img.convert('RGB').save(stream, format='JPEG', quality=75)
                         stream.seek(0)
                     valid_images.append((stream, f))
                 except Exception as e:
@@ -154,24 +159,29 @@ def create_docx_with_images_header_footer(folder_path, header_image_path, bottom
     return output_path
 
 
+# In-memory thumbnail cache (generated once on first request)
+_thumb_cache = {}
+
 @app.route('/demo/thumbnail/<preset_id>/<filename>')
 def demo_thumbnail(preset_id, filename):
     if preset_id not in DEMO_PRESETS:
         return "Not found", 404
     preset = DEMO_PRESETS[preset_id]
     safe_filename = os.path.basename(filename)
-    image_path = os.path.join(preset["folder"], safe_filename)
-    if not os.path.exists(image_path):
-        return "Not found", 404
+    cache_key = f"{preset_id}/{safe_filename}"
 
-    img = Image.open(image_path)
-    img.thumbnail(THUMB_SIZE)
-    buf = BytesIO()
-    img.convert('RGB').save(buf, format='JPEG', quality=70)
-    buf.seek(0)
+    if cache_key not in _thumb_cache:
+        image_path = os.path.join(preset["folder"], safe_filename)
+        if not os.path.exists(image_path):
+            return "Not found", 404
+        img = Image.open(image_path)
+        img.thumbnail(THUMB_SIZE)
+        buf = BytesIO()
+        img.convert('RGB').save(buf, format='JPEG', quality=60)
+        _thumb_cache[cache_key] = buf.getvalue()
 
-    response = Response(buf.getvalue(), mimetype='image/jpeg')
-    response.headers['Cache-Control'] = 'public, max-age=3600'
+    response = Response(_thumb_cache[cache_key], mimetype='image/jpeg')
+    response.headers['Cache-Control'] = 'public, max-age=86400'
     return response
 
 
