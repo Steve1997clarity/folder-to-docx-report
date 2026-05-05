@@ -159,8 +159,39 @@ def create_docx_with_images_header_footer(folder_path, header_image_path, bottom
     return output_path
 
 
-# In-memory thumbnail cache (generated once on first request)
+# In-memory caches (generated once)
 _thumb_cache = {}
+_demo_report_cache = {}
+
+
+def _pregenerate_demos():
+    """Pre-generate demo reports on startup for instant serving."""
+    print("Pre-generating demo reports...")
+    output_dir = os.path.join(os.getcwd(), "OUTPUT")
+    os.makedirs(output_dir, exist_ok=True)
+    for preset_id, preset in DEMO_PRESETS.items():
+        path = create_docx_with_images_header_footer(
+            folder_path=preset["folder"],
+            header_image_path=DEFAULT_HEADER_IMAGE,
+            bottom_image_path=DEFAULT_BOTTOM_IMAGE,
+            output_docx=preset["output_filename"],
+            output_folder=output_dir
+        )
+        with open(path, 'rb') as f:
+            _demo_report_cache[preset_id] = f.read()
+        print(f"  Cached: {preset['name']} ({len(_demo_report_cache[preset_id])//1024} KB)")
+    # Also pre-warm thumbnail cache
+    for preset_id, preset in DEMO_PRESETS.items():
+        for img_name in preset["preview_images"]:
+            cache_key = f"{preset_id}/{img_name}"
+            image_path = os.path.join(preset["folder"], img_name)
+            if os.path.exists(image_path):
+                img = Image.open(image_path)
+                img.thumbnail(THUMB_SIZE)
+                buf = BytesIO()
+                img.convert('RGB').save(buf, format='JPEG', quality=60)
+                _thumb_cache[cache_key] = buf.getvalue()
+    print("Demo reports and thumbnails cached.")
 
 @app.route('/demo/thumbnail/<preset_id>/<filename>')
 def demo_thumbnail(preset_id, filename):
@@ -192,21 +223,24 @@ def demo_generate():
         return "Invalid preset", 400
 
     preset = DEMO_PRESETS[preset_id]
-    output_dir = os.path.join(os.getcwd(), "OUTPUT")
-    if os.path.exists(output_dir):
-        shutil.rmtree(output_dir)
-    os.makedirs(output_dir, exist_ok=True)
 
-    generated_path = create_docx_with_images_header_footer(
-        folder_path=preset["folder"],
-        header_image_path=DEFAULT_HEADER_IMAGE,
-        bottom_image_path=DEFAULT_BOTTOM_IMAGE,
-        output_docx=preset["output_filename"],
-        output_folder=output_dir
-    )
+    # Serve from pre-generated cache (instant response)
+    if preset_id in _demo_report_cache:
+        data = _demo_report_cache[preset_id]
+    else:
+        # Fallback: generate on the fly
+        output_dir = os.path.join(os.getcwd(), "OUTPUT")
+        os.makedirs(output_dir, exist_ok=True)
+        generated_path = create_docx_with_images_header_footer(
+            folder_path=preset["folder"],
+            header_image_path=DEFAULT_HEADER_IMAGE,
+            bottom_image_path=DEFAULT_BOTTOM_IMAGE,
+            output_docx=preset["output_filename"],
+            output_folder=output_dir
+        )
+        with open(generated_path, 'rb') as f:
+            data = f.read()
 
-    with open(generated_path, 'rb') as f:
-        data = f.read()
     response = Response(data, mimetype="application/vnd.openxmlformats-officedocument.wordprocessingml.document")
     response.headers["Content-Disposition"] = f"attachment; filename={preset['output_filename']}"
     return response
@@ -860,4 +894,5 @@ def index():
         return render_template_string(html_page)
 
 if __name__ == '__main__':
+    _pregenerate_demos()
     app.run(debug=True, port=11312, host="0.0.0.0")
