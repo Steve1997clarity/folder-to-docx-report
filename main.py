@@ -193,6 +193,25 @@ def _pregenerate_demos():
                 _thumb_cache[cache_key] = buf.getvalue()
     print("Demo reports and thumbnails cached.")
 
+@app.route('/branding/<image_name>')
+def branding_image(image_name):
+    """Serve header/footer branding images."""
+    allowed = {
+        "header": DEFAULT_HEADER_IMAGE,
+        "footer": DEFAULT_BOTTOM_IMAGE,
+    }
+    if image_name not in allowed:
+        return "Not found", 404
+    image_path = allowed[image_name]
+    if not os.path.exists(image_path):
+        return "Not found", 404
+    with open(image_path, 'rb') as f:
+        data = f.read()
+    response = Response(data, mimetype='image/png')
+    response.headers['Cache-Control'] = 'public, max-age=86400'
+    return response
+
+
 @app.route('/demo/thumbnail/<preset_id>/<filename>')
 def demo_thumbnail(preset_id, filename):
     if preset_id not in DEMO_PRESETS:
@@ -368,19 +387,34 @@ def index():
         z-index: 100;
       }
       .nav-brand {
-        font-weight: 800;
-        font-size: 1rem;
-        color: var(--primary);
-        letter-spacing: -0.02em;
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        text-decoration: none;
+      }
+      .nav-logo {
+        height: 32px;
+        object-fit: contain;
+      }
+      .nav-divider {
+        width: 1px;
+        height: 24px;
+        background: var(--border);
+      }
+      .nav-product {
+        font-weight: 700;
+        font-size: 0.9rem;
+        color: var(--text-dark);
+        letter-spacing: -0.01em;
       }
       .nav-tag {
-        font-size: 0.7rem;
+        font-size: 0.65rem;
         background: var(--primary-light);
         color: var(--primary);
-        padding: 3px 8px;
+        padding: 2px 8px;
         border-radius: 4px;
         font-weight: 600;
-        margin-left: 10px;
+        margin-left: 6px;
       }
 
       /* --- Hero --- */
@@ -710,8 +744,12 @@ def index():
     <!-- Nav -->
     <nav class="nav-bar">
       <div class="container d-flex align-items-center">
-        <span class="nav-brand">SurveyDoc AI</span>
-        <span class="nav-tag">Prototype Demo</span>
+        <div class="nav-brand">
+          <img src="/branding/header" alt="Metapeller Limited" class="nav-logo">
+          <div class="nav-divider"></div>
+          <span class="nav-product">SurveyDoc AI</span>
+          <span class="nav-tag">Prototype</span>
+        </div>
       </div>
     </nav>
 
@@ -837,11 +875,35 @@ def index():
     </section>
 
     <!-- Footer -->
+    <!-- Platform Note -->
+    <section style="padding: 40px 0; background: var(--primary-light); border-top: 1px solid var(--border);">
+      <div class="container text-center">
+        <div class="section-header">
+          <span class="section-label">Platform</span>
+          <h2 class="section-title">Your Brand, Your Reports</h2>
+          <p class="section-desc">SurveyDoc AI is a white-label platform. Company logos, headers, footers, and report layouts are fully customisable to match your firm's branding.</p>
+        </div>
+        <div style="display: flex; justify-content: center; gap: 32px; margin-top: 28px; flex-wrap: wrap;">
+          <div style="background: white; border-radius: 12px; padding: 18px 28px; box-shadow: var(--card-shadow); border: 1px solid var(--border);">
+            <div style="font-size: 0.72rem; color: var(--text-muted); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600;">Report Header</div>
+            <img src="/branding/header" alt="Header branding" style="height: 36px; object-fit: contain;">
+          </div>
+          <div style="background: white; border-radius: 12px; padding: 18px 28px; box-shadow: var(--card-shadow); border: 1px solid var(--border);">
+            <div style="font-size: 0.72rem; color: var(--text-muted); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600;">Report Footer</div>
+            <img src="/branding/footer" alt="Footer branding" style="height: 28px; object-fit: contain;">
+          </div>
+        </div>
+      </div>
+    </section>
+
     <footer class="footer">
       <div class="container">
+        <div style="margin-bottom: 16px;">
+          <img src="/branding/footer" alt="Contact" style="height: 24px; object-fit: contain; opacity: 0.7;">
+        </div>
         <p><strong style="color:#e2e8f0;">SurveyDoc AI</strong> &mdash; Prototype Demonstration</p>
         <p>AI-Driven Document Automation for Building Survey Professionals</p>
-        <p style="margin-top: 12px; font-size: 0.72rem; color: #475569;">This is a technology demonstration. Generated reports use sample branding for illustration purposes.</p>
+        <p style="margin-top: 12px; font-size: 0.72rem; color: #475569;">This is a white-label platform demo. Logos, headers, footers, and layouts are fully customisable per client.</p>
       </div>
     </footer>
 
