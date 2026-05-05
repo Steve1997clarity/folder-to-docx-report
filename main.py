@@ -216,11 +216,11 @@ def demo_thumbnail(preset_id, filename):
     return response
 
 
-@app.route('/demo/generate', methods=['POST'])
-def demo_generate():
-    preset_id = request.form.get('preset_id')
+@app.route('/demo/download/<preset_id>')
+def demo_download(preset_id):
+    """GET-based download (works reliably through Codespace proxy)."""
     if preset_id not in DEMO_PRESETS:
-        return "Invalid preset", 400
+        return "Invalid preset", 404
 
     preset = DEMO_PRESETS[preset_id]
 
@@ -315,13 +315,10 @@ def index():
                             <span class="badge-pill">{preset["image_count"]} photos</span>
                             <span class="badge-pill">{preset["date"]}</span>
                         </div>
-                        <form method="post" action="/demo/generate">
-                            <input type="hidden" name="preset_id" value="{preset_id}">
-                            <button type="submit" class="btn-demo" onclick="handleDemoClick(this)">
-                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
-                                Generate Sample Report
-                            </button>
-                        </form>
+                        <a href="/demo/download/{preset_id}" class="btn-demo" onclick="handleDemoClick(this)">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+                            Generate Sample Report
+                        </a>
                     </div>
                 </div>
             </div>
@@ -607,9 +604,10 @@ def index():
         transition: all 0.2s;
         width: 100%;
         justify-content: center;
+        text-decoration: none;
       }
-      .btn-demo:hover { background: var(--primary-hover); transform: translateY(-1px); }
-      .btn-demo:disabled { opacity: 0.7; cursor: wait; transform: none; }
+      .btn-demo:hover { background: var(--primary-hover); transform: translateY(-1px); color: white; }
+      a.btn-demo:visited { color: white; }
 
       /* --- Upload Section --- */
       .upload-section {
@@ -878,8 +876,15 @@ def index():
       });
 
       function handleDemoClick(btn) {
-        btn.disabled = true;
-        btn.innerHTML = '<span class="spinner"></span> Generating...';
+        btn.style.pointerEvents = 'none';
+        btn.style.opacity = '0.7';
+        btn.innerHTML = '<span class="spinner"></span> Downloading...';
+        // Re-enable after 8 seconds (file should have downloaded by then)
+        setTimeout(function() {
+          btn.style.pointerEvents = '';
+          btn.style.opacity = '';
+          btn.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg> Generate Sample Report';
+        }, 8000);
       }
 
       // Smooth scroll for CTA
