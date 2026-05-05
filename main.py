@@ -22,9 +22,24 @@ THUMB_SIZE = (300, 300)  # Thumbnail dimensions
 def too_large(e):
     return "File too large. Demo limit is 20 MB total.", 413
 
-# Default branding images (appear in generated reports only)
-DEFAULT_HEADER_IMAGE = os.path.join(os.getcwd(), "USER_INPUT", "DOCX_HEADER_IMAGE", "header_image.png")
-DEFAULT_BOTTOM_IMAGE = os.path.join(os.getcwd(), "USER_INPUT", "DOCX_BOTTOM_IMAGE", "bottom_image.png")
+# Branding presets
+BRANDING_PRESETS = {
+    "hkpc": {
+        "name": "HKPC",
+        "description": "Hong Kong Productivity Council",
+        "header": os.path.join(os.getcwd(), "BRANDING_PRESETS", "hkpc_header.jpg"),
+        "footer": os.path.join(os.getcwd(), "BRANDING_PRESETS", "hkpc_footer.jpg"),
+    },
+    "metapeller": {
+        "name": "Metapeller",
+        "description": "Metapeller Limited",
+        "header": os.path.join(os.getcwd(), "USER_INPUT", "DOCX_HEADER_IMAGE", "header_image.png"),
+        "footer": os.path.join(os.getcwd(), "USER_INPUT", "DOCX_BOTTOM_IMAGE", "bottom_image.png"),
+    },
+}
+DEFAULT_BRANDING = "hkpc"
+DEFAULT_HEADER_IMAGE = BRANDING_PRESETS[DEFAULT_BRANDING]["header"]
+DEFAULT_BOTTOM_IMAGE = BRANDING_PRESETS[DEFAULT_BRANDING]["footer"]
 
 # Demo presets
 DEMO_PRESETS = {
@@ -196,21 +211,19 @@ def _pregenerate_demos():
                 _thumb_cache[cache_key] = buf.getvalue()
     print("Demo reports and thumbnails cached.")
 
-@app.route('/branding/<image_name>')
-def branding_image(image_name):
-    """Serve header/footer branding images."""
-    allowed = {
-        "header": DEFAULT_HEADER_IMAGE,
-        "footer": DEFAULT_BOTTOM_IMAGE,
-    }
-    if image_name not in allowed:
+@app.route('/branding/<preset_id>/<part>')
+def branding_image(preset_id, part):
+    """Serve branding preview images for presets."""
+    if preset_id not in BRANDING_PRESETS or part not in ('header', 'footer'):
         return "Not found", 404
-    image_path = allowed[image_name]
+    image_path = BRANDING_PRESETS[preset_id][part]
     if not os.path.exists(image_path):
         return "Not found", 404
     with open(image_path, 'rb') as f:
         data = f.read()
-    response = Response(data, mimetype='image/png')
+    ext = os.path.splitext(image_path)[1].lower()
+    mime = 'image/jpeg' if ext in ('.jpg', '.jpeg') else 'image/png'
+    response = Response(data, mimetype=mime)
     response.headers['Cache-Control'] = 'public, max-age=86400'
     return response
 
@@ -297,34 +310,44 @@ def index():
             file.save(dest_path)
             saved_count += 1
 
-        # Custom header/footer branding (optional)
-        header_image_path = DEFAULT_HEADER_IMAGE
-        header_file = request.files.get('header_image')
-        if header_file and header_file.filename:
-            hname = header_file.filename.lower()
-            if hname.endswith(('.png', '.jpg', '.jpeg')):
-                custom_header_path = os.path.join(upload_dir, '_custom_header' + os.path.splitext(hname)[1])
-                header_file.save(custom_header_path)
-                try:
-                    with Image.open(custom_header_path) as img:
-                        img.verify()
-                    header_image_path = custom_header_path
-                except Exception:
-                    pass  # Invalid image — fall back to default
+        # Branding selection
+        branding_preset = request.form.get('branding_preset', DEFAULT_BRANDING)
 
-        bottom_image_path = DEFAULT_BOTTOM_IMAGE
-        footer_file = request.files.get('footer_image')
-        if footer_file and footer_file.filename:
-            fname = footer_file.filename.lower()
-            if fname.endswith(('.png', '.jpg', '.jpeg')):
-                custom_footer_path = os.path.join(upload_dir, '_custom_footer' + os.path.splitext(fname)[1])
-                footer_file.save(custom_footer_path)
-                try:
-                    with Image.open(custom_footer_path) as img:
-                        img.verify()
-                    bottom_image_path = custom_footer_path
-                except Exception:
-                    pass  # Invalid image — fall back to default
+        if branding_preset == 'custom':
+            # Custom upload — use uploaded files, fall back to default
+            header_image_path = DEFAULT_HEADER_IMAGE
+            header_file = request.files.get('header_image')
+            if header_file and header_file.filename:
+                hname = header_file.filename.lower()
+                if hname.endswith(('.png', '.jpg', '.jpeg')):
+                    custom_header_path = os.path.join(upload_dir, '_custom_header' + os.path.splitext(hname)[1])
+                    header_file.save(custom_header_path)
+                    try:
+                        with Image.open(custom_header_path) as img:
+                            img.verify()
+                        header_image_path = custom_header_path
+                    except Exception:
+                        pass
+
+            bottom_image_path = DEFAULT_BOTTOM_IMAGE
+            footer_file = request.files.get('footer_image')
+            if footer_file and footer_file.filename:
+                fname = footer_file.filename.lower()
+                if fname.endswith(('.png', '.jpg', '.jpeg')):
+                    custom_footer_path = os.path.join(upload_dir, '_custom_footer' + os.path.splitext(fname)[1])
+                    footer_file.save(custom_footer_path)
+                    try:
+                        with Image.open(custom_footer_path) as img:
+                            img.verify()
+                        bottom_image_path = custom_footer_path
+                    except Exception:
+                        pass
+        elif branding_preset in BRANDING_PRESETS:
+            header_image_path = BRANDING_PRESETS[branding_preset]["header"]
+            bottom_image_path = BRANDING_PRESETS[branding_preset]["footer"]
+        else:
+            header_image_path = DEFAULT_HEADER_IMAGE
+            bottom_image_path = DEFAULT_BOTTOM_IMAGE
 
         output_docx = "Survey_Report.docx"
         generated_docx_path = create_docx_with_images_header_footer(
@@ -728,72 +751,95 @@ def index():
       .btn-upload:hover:not(:disabled) { background: var(--accent-hover); transform: translateY(-1px); }
       .btn-upload:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
 
-      /* --- Branding Upload --- */
-      .branding-row {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 16px;
-        margin-bottom: 24px;
+      /* --- Branding Selector --- */
+      .branding-selector-label {
+        font-size: 0.82rem;
+        font-weight: 700;
+        color: var(--text-dark);
+        margin: 24px 0 12px;
       }
-      .branding-label {
-        font-size: 0.78rem;
-        font-weight: 600;
-        color: var(--text-muted);
-        text-transform: uppercase;
-        letter-spacing: 0.04em;
+      .branding-options {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 12px;
         margin-bottom: 8px;
       }
-      .branding-card {
-        border: 2px dashed #cbd5e1;
+      .brand-opt {
+        border: 2px solid var(--border);
         border-radius: var(--radius-sm);
-        padding: 18px 14px;
+        padding: 14px 10px 12px;
         text-align: center;
         cursor: pointer;
         transition: all 0.2s;
-        background: var(--bg-light);
+        background: white;
         position: relative;
-        min-height: 90px;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
       }
-      .branding-card:hover { border-color: var(--primary); background: var(--primary-light); }
-      .branding-card.has-file { border-style: solid; border-color: var(--accent); background: #f0fdf4; }
-      .branding-card .bc-icon { color: #94a3b8; margin-bottom: 6px; }
-      .branding-card .bc-text { font-size: 0.78rem; color: var(--text-muted); }
-      .branding-card .bc-hint { font-size: 0.68rem; color: #94a3b8; margin-top: 2px; }
-      .branding-preview {
-        max-height: 44px;
-        max-width: 100%;
-        object-fit: contain;
-        margin-bottom: 4px;
-      }
-      .branding-remove {
-        position: absolute;
-        top: 6px;
-        right: 8px;
-        background: #ef4444;
-        color: white;
-        border: none;
-        border-radius: 50%;
-        width: 20px;
-        height: 20px;
-        font-size: 12px;
-        line-height: 18px;
-        cursor: pointer;
+      .brand-opt:hover { border-color: var(--primary); background: var(--primary-light); }
+      .brand-opt.selected { border-color: var(--primary); background: var(--primary-light); box-shadow: 0 0 0 1px var(--primary); }
+      .brand-opt .bo-check {
+        position: absolute; top: 8px; right: 8px;
+        width: 18px; height: 18px; border-radius: 50%;
+        background: var(--primary); color: white;
+        font-size: 11px; line-height: 18px; text-align: center;
         display: none;
-        padding: 0;
       }
-      .branding-card.has-file .branding-remove { display: block; }
-      .branding-section-hint {
-        font-size: 0.75rem;
-        color: var(--text-muted);
+      .brand-opt.selected .bo-check { display: block; }
+      .brand-opt .bo-preview {
+        height: 32px; max-width: 100%;
+        object-fit: contain;
+        margin-bottom: 6px;
+      }
+      .brand-opt .bo-name {
+        font-size: 0.78rem; font-weight: 600;
+        color: var(--text-dark); margin-bottom: 2px;
+      }
+      .brand-opt .bo-desc {
+        font-size: 0.68rem; color: var(--text-muted);
+      }
+      .custom-upload-area {
+        display: none;
+        margin-top: 12px;
+        padding: 14px;
+        background: var(--bg-light);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-sm);
+      }
+      .custom-upload-area.visible { display: block; }
+      .custom-upload-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+      }
+      .custom-file-card {
+        border: 2px dashed #cbd5e1;
+        border-radius: 8px;
+        padding: 12px 8px;
         text-align: center;
-        margin-bottom: 20px;
+        cursor: pointer;
+        transition: all 0.2s;
+        background: white;
+        position: relative;
       }
-      @media (max-width: 480px) {
-        .branding-row { grid-template-columns: 1fr; }
+      .custom-file-card:hover { border-color: var(--primary); }
+      .custom-file-card.has-file { border-style: solid; border-color: var(--accent); background: #f0fdf4; }
+      .custom-file-card .cf-icon { color: #94a3b8; margin-bottom: 4px; }
+      .custom-file-card .cf-text { font-size: 0.75rem; color: var(--text-muted); }
+      .custom-file-card .cf-preview { max-height: 32px; max-width: 100%; object-fit: contain; margin-bottom: 4px; }
+      .custom-file-card .cf-remove {
+        position: absolute; top: 4px; right: 6px;
+        background: #ef4444; color: white; border: none;
+        border-radius: 50%; width: 18px; height: 18px;
+        font-size: 11px; line-height: 16px; cursor: pointer;
+        display: none; padding: 0;
+      }
+      .custom-file-card.has-file .cf-remove { display: block; }
+      .branding-powered {
+        font-size: 0.72rem; color: var(--text-muted);
+        text-align: center; margin-top: 8px;
+      }
+      @media (max-width: 540px) {
+        .branding-options { grid-template-columns: 1fr; }
+        .custom-upload-row { grid-template-columns: 1fr; }
       }
 
       /* --- Limits Notice --- */
@@ -843,7 +889,7 @@ def index():
     <nav class="nav-bar">
       <div class="container d-flex align-items-center">
         <div class="nav-brand">
-          <img src="/branding/header" alt="Metapeller Limited" class="nav-logo">
+          <img src="/branding/metapeller/header" alt="Metapeller Limited" class="nav-logo">
           <div class="nav-divider"></div>
           <span class="nav-tag">Prototype</span>
         </div>
@@ -944,36 +990,10 @@ def index():
         <div class="section-header">
           <span class="section-label">Try Your Own</span>
           <h2 class="section-title">Upload Your Photos</h2>
-          <p class="section-desc">Test with your own inspection images to see the output quality.</p>
+          <p class="section-desc">Test with your own inspection images and choose your report branding.</p>
         </div>
         <div class="upload-box">
           <form id="upload-form" method="post" enctype="multipart/form-data">
-            <!-- Custom Branding (Optional) -->
-            <div class="branding-label" style="text-align:center; margin-bottom: 10px;">Customise Report Branding (Optional)</div>
-            <div class="branding-row">
-              <div class="branding-card" id="header-card" onclick="document.getElementById('header_image').click()">
-                <button type="button" class="branding-remove" id="header-remove" onclick="event.stopPropagation(); clearBranding('header');">&times;</button>
-                <img id="header-preview" class="branding-preview" style="display:none;" alt="Header preview">
-                <div class="bc-icon" id="header-icon">
-                  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/></svg>
-                </div>
-                <div class="bc-text" id="header-text">Header Logo</div>
-                <div class="bc-hint">PNG or JPG</div>
-              </div>
-              <div class="branding-card" id="footer-card" onclick="document.getElementById('footer_image').click()">
-                <button type="button" class="branding-remove" id="footer-remove" onclick="event.stopPropagation(); clearBranding('footer');">&times;</button>
-                <img id="footer-preview" class="branding-preview" style="display:none;" alt="Footer preview">
-                <div class="bc-icon" id="footer-icon">
-                  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="15" x2="21" y2="15"/></svg>
-                </div>
-                <div class="bc-text" id="footer-text">Footer Contact</div>
-                <div class="bc-hint">PNG or JPG</div>
-              </div>
-            </div>
-            <input type="file" id="header_image" name="header_image" accept=".png,.jpg,.jpeg" style="display:none;">
-            <input type="file" id="footer_image" name="footer_image" accept=".png,.jpg,.jpeg" style="display:none;">
-            <div class="branding-section-hint">Leave empty to use default Metapeller branding</div>
-
             <div class="dropzone" id="dropzone" onclick="document.getElementById('folder_files').click()">
               <div class="dropzone-icon">
                 <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/><line x1="12" y1="11" x2="12" y2="17"/><polyline points="9 14 12 11 15 14"/></svg>
@@ -983,6 +1003,56 @@ def index():
             </div>
             <input type="file" id="folder_files" name="folder_files" webkitdirectory directory multiple required style="display:none;">
             <div class="file-count" id="file-count"></div>
+
+            <!-- Branding Selector -->
+            <input type="hidden" id="branding_preset" name="branding_preset" value="hkpc">
+            <div class="branding-selector-label">Report Branding</div>
+            <div class="branding-options">
+              <div class="brand-opt selected" data-preset="hkpc" onclick="selectBranding('hkpc')">
+                <div class="bo-check">&#10003;</div>
+                <img src="/branding/hkpc/header" class="bo-preview" alt="HKPC">
+                <div class="bo-name">HKPC</div>
+                <div class="bo-desc">Default</div>
+              </div>
+              <div class="brand-opt" data-preset="metapeller" onclick="selectBranding('metapeller')">
+                <div class="bo-check">&#10003;</div>
+                <img src="/branding/metapeller/header" class="bo-preview" alt="Metapeller">
+                <div class="bo-name">Metapeller</div>
+                <div class="bo-desc">Metapeller Limited</div>
+              </div>
+              <div class="brand-opt" data-preset="custom" onclick="selectBranding('custom')">
+                <div class="bo-check">&#10003;</div>
+                <svg class="bo-preview" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="1.5" style="height:32px;"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="11" x2="12" y2="17"/><line x1="9" y1="14" x2="15" y2="14"/></svg>
+                <div class="bo-name">Custom</div>
+                <div class="bo-desc">Upload your own</div>
+              </div>
+            </div>
+
+            <!-- Custom upload area (shown only when Custom is selected) -->
+            <div class="custom-upload-area" id="custom-upload-area">
+              <div class="custom-upload-row">
+                <div class="custom-file-card" id="custom-header-card" onclick="document.getElementById('header_image').click()">
+                  <button type="button" class="cf-remove" onclick="event.stopPropagation(); clearCustomFile('header');">&times;</button>
+                  <img id="custom-header-preview" class="cf-preview" style="display:none;" alt="Header">
+                  <div class="cf-icon" id="custom-header-icon">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/></svg>
+                  </div>
+                  <div class="cf-text" id="custom-header-text">Header Logo</div>
+                </div>
+                <div class="custom-file-card" id="custom-footer-card" onclick="document.getElementById('footer_image').click()">
+                  <button type="button" class="cf-remove" onclick="event.stopPropagation(); clearCustomFile('footer');">&times;</button>
+                  <img id="custom-footer-preview" class="cf-preview" style="display:none;" alt="Footer">
+                  <div class="cf-icon" id="custom-footer-icon">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="15" x2="21" y2="15"/></svg>
+                  </div>
+                  <div class="cf-text" id="custom-footer-text">Footer Contact</div>
+                </div>
+              </div>
+            </div>
+            <input type="file" id="header_image" name="header_image" accept=".png,.jpg,.jpeg" style="display:none;">
+            <input type="file" id="footer_image" name="footer_image" accept=".png,.jpg,.jpeg" style="display:none;">
+            <div class="branding-powered">All reports include "Powered by METAPELLER LIMITED"</div>
+
             <div class="limits-notice">
               <strong>Demo Limits:</strong> Max 20 images per report &middot; Max 5 MB per image &middot; 20 MB total upload &middot; JPG/JPEG only
             </div>
@@ -997,36 +1067,11 @@ def index():
       </div>
     </section>
 
-    <!-- Footer -->
-    <!-- Platform Note -->
-    <section style="padding: 40px 0; background: var(--primary-light); border-top: 1px solid var(--border);">
-      <div class="container text-center">
-        <div class="section-header">
-          <span class="section-label">Platform</span>
-          <h2 class="section-title">Your Brand, Your Reports</h2>
-          <p class="section-desc">A white-label platform. Upload your own logo and contact details when generating a report, or use the defaults below. Fully customisable per client.</p>
-        </div>
-        <div style="display: flex; justify-content: center; gap: 32px; margin-top: 28px; flex-wrap: wrap;">
-          <div style="background: white; border-radius: 12px; padding: 18px 28px; box-shadow: var(--card-shadow); border: 1px solid var(--border);">
-            <div style="font-size: 0.72rem; color: var(--text-muted); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600;">Report Header</div>
-            <img src="/branding/header" alt="Header branding" style="height: 36px; object-fit: contain;">
-          </div>
-          <div style="background: white; border-radius: 12px; padding: 18px 28px; box-shadow: var(--card-shadow); border: 1px solid var(--border);">
-            <div style="font-size: 0.72rem; color: var(--text-muted); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600;">Report Footer</div>
-            <img src="/branding/footer" alt="Footer branding" style="height: 28px; object-fit: contain;">
-          </div>
-        </div>
-      </div>
-    </section>
-
     <footer class="footer">
       <div class="container">
-        <div style="margin-bottom: 16px;">
-          <img src="/branding/footer" alt="Contact" style="height: 24px; object-fit: contain; opacity: 0.7;">
-        </div>
         <p><strong style="color:#e2e8f0;">Metapeller Limited</strong> &mdash; Prototype Demonstration</p>
         <p>AI-Driven Document Automation for Building Survey Professionals</p>
-        <p style="margin-top: 12px; font-size: 0.72rem; color: #475569;">Powered by Metapeller Limited. Logos, headers, footers, and layouts are fully customisable per client.</p>
+        <p style="margin-top: 12px; font-size: 0.72rem; color: #475569;">White-label platform. Logos, headers, footers, and layouts are fully customisable per client.</p>
       </div>
     </footer>
 
@@ -1072,16 +1117,30 @@ def index():
         }, 8000);
       }
 
-      // --- Branding upload preview ---
-      function setupBranding(type) {
-        const input = document.getElementById(type + '_image');
-        const card = document.getElementById(type + '-card');
-        const preview = document.getElementById(type + '-preview');
-        const icon = document.getElementById(type + '-icon');
-        const text = document.getElementById(type + '-text');
+      // --- Branding preset selector ---
+      function selectBranding(preset) {
+        document.getElementById('branding_preset').value = preset;
+        document.querySelectorAll('.brand-opt').forEach(function(el) {
+          el.classList.toggle('selected', el.dataset.preset === preset);
+        });
+        var customArea = document.getElementById('custom-upload-area');
+        if (preset === 'custom') {
+          customArea.classList.add('visible');
+        } else {
+          customArea.classList.remove('visible');
+        }
+      }
+
+      // Custom file upload preview
+      function setupCustomFile(type) {
+        var input = document.getElementById(type + '_image');
+        var card = document.getElementById('custom-' + type + '-card');
+        var preview = document.getElementById('custom-' + type + '-preview');
+        var icon = document.getElementById('custom-' + type + '-icon');
+        var text = document.getElementById('custom-' + type + '-text');
         input.addEventListener('change', function() {
           if (this.files && this.files[0]) {
-            const reader = new FileReader();
+            var reader = new FileReader();
             reader.onload = function(e) {
               preview.src = e.target.result;
               preview.style.display = 'block';
@@ -1093,15 +1152,15 @@ def index():
           }
         });
       }
-      setupBranding('header');
-      setupBranding('footer');
+      setupCustomFile('header');
+      setupCustomFile('footer');
 
-      function clearBranding(type) {
-        const input = document.getElementById(type + '_image');
-        const card = document.getElementById(type + '-card');
-        const preview = document.getElementById(type + '-preview');
-        const icon = document.getElementById(type + '-icon');
-        const text = document.getElementById(type + '-text');
+      function clearCustomFile(type) {
+        var input = document.getElementById(type + '_image');
+        var card = document.getElementById('custom-' + type + '-card');
+        var preview = document.getElementById('custom-' + type + '-preview');
+        var icon = document.getElementById('custom-' + type + '-icon');
+        var text = document.getElementById('custom-' + type + '-text');
         input.value = '';
         preview.style.display = 'none';
         preview.src = '';
