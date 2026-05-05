@@ -1,8 +1,6 @@
 {
   "name": "DOCX Report Generator",
-  "build": {
-    "dockerfile": "../Dockerfile"
-  },
+  "image": "mcr.microsoft.com/devcontainers/python:3.12",
   "forwardPorts": [11312],
   "portsAttributes": {
     "11312": {
@@ -11,7 +9,8 @@
       "visibility": "public"
     }
   },
-  "postStartCommand": "pip install -r requirements.txt && python main.py &",
+  "postCreateCommand": "pip install -r requirements.txt",
+  "postStartCommand": "nohup python main.py > /tmp/flask.log 2>&1 &",
   "customizations": {
     "codespaces": {
       "openFiles": []
