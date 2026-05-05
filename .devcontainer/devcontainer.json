@@ -1,0 +1,20 @@
+{
+  "name": "DOCX Report Generator",
+  "build": {
+    "dockerfile": "../Dockerfile"
+  },
+  "forwardPorts": [11312],
+  "portsAttributes": {
+    "11312": {
+      "label": "DOCX Report Generator",
+      "onAutoForward": "openBrowser",
+      "visibility": "public"
+    }
+  },
+  "postStartCommand": "pip install -r requirements.txt && python main.py &",
+  "customizations": {
+    "codespaces": {
+      "openFiles": []
+    }
+  }
+}
