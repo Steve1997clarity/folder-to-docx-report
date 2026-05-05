@@ -3,7 +3,7 @@ import shutil
 from io import BytesIO
 from flask import Flask, request, send_file, render_template_string, Response
 from docx import Document
-from docx.shared import Inches, Pt, Cm
+from docx.shared import Inches, Pt, Cm, RGBColor
 from docx.enum.text import WD_ALIGN_PARAGRAPH
 from docx.oxml import OxmlElement
 from docx.oxml.ns import qn
@@ -93,29 +93,6 @@ def create_docx_with_images_header_footer(folder_path, header_image_path, bottom
         run = header_para.add_run("Header Image Not Found")
         run.font.size = Pt(10)
 
-    # --- Body: Company logo at top of every page ---
-    if os.path.exists(header_image_path):
-        logo_para = doc.add_paragraph()
-        logo_para.alignment = WD_ALIGN_PARAGRAPH.LEFT
-        try:
-            logo_run = logo_para.add_run()
-            logo_run.add_picture(header_image_path, width=Inches(2.5))
-        except Exception:
-            logo_para.add_run("Company Logo")
-    # Add a thin line separator after the logo
-    separator = doc.add_paragraph()
-    separator.paragraph_format.space_before = Pt(4)
-    separator.paragraph_format.space_after = Pt(12)
-    sep_pPr = separator._element.get_or_add_pPr()
-    pBdr = OxmlElement('w:pBdr')
-    bottom_border = OxmlElement('w:bottom')
-    bottom_border.set(qn('w:val'), 'single')
-    bottom_border.set(qn('w:sz'), '4')
-    bottom_border.set(qn('w:space'), '1')
-    bottom_border.set(qn('w:color'), '999999')
-    pBdr.append(bottom_border)
-    sep_pPr.append(pBdr)
-
     # Body: scan for JPEG images (resize for demo to keep output small)
     valid_images = []
     for root, dirs, files in os.walk(folder_path):
@@ -157,47 +134,26 @@ def create_docx_with_images_header_footer(folder_path, header_image_path, bottom
             para.text = img_name
             para.paragraph_format.space_after = Pt(12)
 
-    # --- Body: Contact info at bottom ---
-    # Add a thin line separator before the footer
-    sep2 = doc.add_paragraph()
-    sep2.paragraph_format.space_before = Pt(12)
-    sep2.paragraph_format.space_after = Pt(4)
-    sep2_pPr = sep2._element.get_or_add_pPr()
-    pBdr2 = OxmlElement('w:pBdr')
-    bottom_border2 = OxmlElement('w:bottom')
-    bottom_border2.set(qn('w:val'), 'single')
-    bottom_border2.set(qn('w:sz'), '4')
-    bottom_border2.set(qn('w:space'), '1')
-    bottom_border2.set(qn('w:color'), '999999')
-    pBdr2.append(bottom_border2)
-    sep2_pPr.append(pBdr2)
-
-    if os.path.exists(bottom_image_path):
-        footer_body_para = doc.add_paragraph()
-        footer_body_para.alignment = WD_ALIGN_PARAGRAPH.CENTER
-        try:
-            frun = footer_body_para.add_run()
-            frun.add_picture(bottom_image_path, height=Cm(1.08))
-        except Exception:
-            footer_body_para.add_run("Contact Information")
-
-    # Also keep header/footer sections for print view
+    # Footer section
     footer_section = section.footer
     for para in footer_section.paragraphs:
         p = para._element
         p.getparent().remove(p)
-    footer_para = footer_section.add_paragraph()
-    footer_para.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    # Contact image in footer (if available)
     if os.path.exists(bottom_image_path):
+        footer_img_para = footer_section.add_paragraph()
+        footer_img_para.alignment = WD_ALIGN_PARAGRAPH.CENTER
         try:
-            run = footer_para.add_run()
+            run = footer_img_para.add_run()
             run.add_picture(bottom_image_path, height=Cm(1.08))
-        except Exception as e:
-            run = footer_para.add_run("Error inserting bottom image")
-            run.font.size = Pt(10)
-    else:
-        run = footer_para.add_run("Bottom Image Not Found")
-        run.font.size = Pt(10)
+        except Exception:
+            pass
+    # Compulsory "Powered by" line
+    powered_para = footer_section.add_paragraph()
+    powered_para.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    powered_run = powered_para.add_run("Powered by METAPELLER LIMITED")
+    powered_run.font.size = Pt(8)
+    powered_run.font.color.rgb = RGBColor(128, 128, 128)
 
     if not os.path.exists(output_folder):
         os.makedirs(output_folder)
@@ -794,7 +750,6 @@ def index():
         <div class="nav-brand">
           <img src="/branding/header" alt="Metapeller Limited" class="nav-logo">
           <div class="nav-divider"></div>
-          <span class="nav-product">SurveyDoc AI</span>
           <span class="nav-tag">Prototype</span>
         </div>
       </div>
@@ -928,7 +883,7 @@ def index():
         <div class="section-header">
           <span class="section-label">Platform</span>
           <h2 class="section-title">Your Brand, Your Reports</h2>
-          <p class="section-desc">SurveyDoc AI is a white-label platform. Company logos, headers, footers, and report layouts are fully customisable to match your firm's branding.</p>
+          <p class="section-desc">A white-label platform. Company logos, headers, footers, and report layouts are fully customisable to match your firm's branding.</p>
         </div>
         <div style="display: flex; justify-content: center; gap: 32px; margin-top: 28px; flex-wrap: wrap;">
           <div style="background: white; border-radius: 12px; padding: 18px 28px; box-shadow: var(--card-shadow); border: 1px solid var(--border);">
@@ -948,9 +903,9 @@ def index():
         <div style="margin-bottom: 16px;">
           <img src="/branding/footer" alt="Contact" style="height: 24px; object-fit: contain; opacity: 0.7;">
         </div>
-        <p><strong style="color:#e2e8f0;">SurveyDoc AI</strong> &mdash; Prototype Demonstration</p>
+        <p><strong style="color:#e2e8f0;">Metapeller Limited</strong> &mdash; Prototype Demonstration</p>
         <p>AI-Driven Document Automation for Building Survey Professionals</p>
-        <p style="margin-top: 12px; font-size: 0.72rem; color: #475569;">This is a white-label platform demo. Logos, headers, footers, and layouts are fully customisable per client.</p>
+        <p style="margin-top: 12px; font-size: 0.72rem; color: #475569;">Powered by Metapeller Limited. Logos, headers, footers, and layouts are fully customisable per client.</p>
       </div>
     </footer>
 
