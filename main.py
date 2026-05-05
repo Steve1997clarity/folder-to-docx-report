@@ -112,7 +112,7 @@ def create_docx_with_images_header_footer(folder_path, header_image_path, bottom
     valid_images = []
     for root, dirs, files in os.walk(folder_path):
         for f in sorted(files):
-            if f.lower().endswith((".jpg", ".jpeg")):
+            if f.lower().endswith((".jpg", ".jpeg")) and not f.startswith("_custom_"):
                 image_path = os.path.join(root, f)
                 try:
                     with Image.open(image_path) as img:
