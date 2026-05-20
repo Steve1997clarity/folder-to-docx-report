@@ -1,4 +1,5 @@
 import os
+import json
 import shutil
 from io import BytesIO
 from flask import Flask, request, send_file, render_template, Response
@@ -97,7 +98,8 @@ DEMO_PRESETS = {
 
 def create_docx_with_images_header_footer(folder_path, header_image_path, bottom_image_path,
                                            output_docx="output.docx", output_folder="OUTPUT",
-                                           image_width=Inches(2.2), images_per_row=3):
+                                           image_width=Inches(2.2), images_per_row=3,
+                                           photo_labels=None):
     doc = Document()
     section = doc.sections[0]
     section.top_margin = Inches(0.5)
@@ -166,7 +168,8 @@ def create_docx_with_images_header_footer(folder_path, header_image_path, bottom
         label_row = table.add_row().cells
         for idx, (stream, img_name) in enumerate(batch):
             para = label_row[idx].paragraphs[0]
-            run = para.add_run(img_name)
+            label = photo_labels.get(img_name, img_name) if photo_labels else img_name
+            run = para.add_run(label)
             run.font.size = Pt(8)
             para.paragraph_format.space_after = Pt(6)
 
@@ -364,13 +367,23 @@ def index():
             header_image_path = DEFAULT_HEADER_IMAGE
             bottom_image_path = DEFAULT_BOTTOM_IMAGE
 
+        # Parse photo labels from frontend
+        photo_labels = None
+        photo_labels_raw = request.form.get('photo_labels', '')
+        if photo_labels_raw:
+            try:
+                photo_labels = json.loads(photo_labels_raw)
+            except (json.JSONDecodeError, TypeError):
+                photo_labels = None
+
         output_docx = "Survey_Report.docx"
         generated_docx_path = create_docx_with_images_header_footer(
             folder_path=upload_dir,
             header_image_path=header_image_path,
             bottom_image_path=bottom_image_path,
             output_docx=output_docx,
-            output_folder=output_dir
+            output_folder=output_dir,
+            photo_labels=photo_labels
         )
 
         with open(generated_docx_path, 'rb') as f:
