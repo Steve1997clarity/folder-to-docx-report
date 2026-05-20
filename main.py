@@ -193,7 +193,12 @@ def create_docx_with_images_header_footer(folder_path, header_image_path, bottom
         label_row = table.add_row().cells
         for idx, (stream, img_name) in enumerate(batch):
             para = label_row[idx].paragraphs[0]
-            label = photo_labels.get(img_name, img_name) if photo_labels else img_name
+            if photo_labels:
+                # Try exact match first, then strip numeric prefix (e.g., 001_)
+                stripped = img_name.split('_', 1)[1] if img_name[:3].isdigit() and '_' in img_name else img_name
+                label = photo_labels.get(img_name, photo_labels.get(stripped, img_name))
+            else:
+                label = img_name
             run = para.add_run(label)
             run.font.size = Pt(8)
             para.paragraph_format.space_after = Pt(6)
