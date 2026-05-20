@@ -283,6 +283,8 @@ def feedback_update_status(feedback_id):
         fb.status = new_status
         fb.updated_at = datetime.utcnow()
         db.session.commit()
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        return jsonify({'success': True, 'status': fb.status})
     return redirect(url_for('feedback.feedback_detail', feedback_id=fb.id))
 
 

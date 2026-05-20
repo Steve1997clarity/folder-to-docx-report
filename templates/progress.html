@@ -223,6 +223,43 @@
         margin: 0;
       }
 
+      /* Admin Tick-Off */
+      .pg-tick-btn {
+        background: none;
+        border: 2px solid #cbd5e1;
+        border-radius: 50%;
+        width: 32px;
+        height: 32px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: all 0.2s;
+        color: #cbd5e1;
+        font-size: 1.1rem;
+        padding: 0;
+        flex-shrink: 0;
+      }
+      .pg-tick-btn:hover {
+        border-color: var(--accent);
+        color: var(--accent);
+        transform: scale(1.1);
+      }
+      .pg-tick-btn.done {
+        border-color: var(--accent);
+        color: var(--accent);
+        background: #f0fdf4;
+      }
+      .pg-tick-btn.done:hover {
+        border-color: #f59e0b;
+        color: #f59e0b;
+        background: #fffbeb;
+      }
+      .pg-tick-btn.loading {
+        opacity: 0.5;
+        pointer-events: none;
+      }
+
       @media (max-width: 600px) {
         .pg-page { padding: 24px 0 40px; }
         .pg-progress-wrap { padding: 18px 16px; }
@@ -284,6 +321,11 @@
                       <span><i class="bi bi-clock"></i> {{ fb.created_at.strftime('%d %b %Y') if fb.created_at else '' }}</span>
                     </div>
                   </div>
+                  {% if is_admin %}
+                  <button class="pg-tick-btn done" onclick="toggleStatus({{ fb.id }}, 'in_progress', this)" title="Reopen">
+                    <i class="bi bi-check-circle-fill"></i>
+                  </button>
+                  {% endif %}
                 </div>
               {% endfor %}
             </div>
@@ -319,6 +361,11 @@
                       <span><i class="bi bi-clock"></i> {{ fb.created_at.strftime('%d %b %Y') if fb.created_at else '' }}</span>
                     </div>
                   </div>
+                  {% if is_admin %}
+                  <button class="pg-tick-btn" onclick="toggleStatus({{ fb.id }}, 'done', this)" title="Mark as Done">
+                    <i class="bi bi-check-circle"></i>
+                  </button>
+                  {% endif %}
                 </div>
               {% endfor %}
             </div>
@@ -354,6 +401,11 @@
                       <span><i class="bi bi-clock"></i> {{ fb.created_at.strftime('%d %b %Y') if fb.created_at else '' }}</span>
                     </div>
                   </div>
+                  {% if is_admin %}
+                  <button class="pg-tick-btn" onclick="toggleStatus({{ fb.id }}, 'done', this)" title="Mark as Done">
+                    <i class="bi bi-check-circle"></i>
+                  </button>
+                  {% endif %}
                 </div>
               {% endfor %}
             </div>
@@ -370,4 +422,24 @@
         </div>
       {% endif %}
     </div>
+
+{% if is_admin %}
+<script>
+function toggleStatus(feedbackId, newStatus, btn) {
+  btn.classList.add('loading');
+  var fd = new FormData();
+  fd.append('status', newStatus);
+  fetch('/feedback/' + feedbackId + '/status', {
+    method: 'POST',
+    headers: { 'X-Requested-With': 'XMLHttpRequest' },
+    body: fd
+  }).then(function(r) { return r.json(); }).then(function(data) {
+    if (data.success) { location.reload(); }
+  }).catch(function() {
+    btn.classList.remove('loading');
+    alert('Failed to update status. Please try again.');
+  });
+}
+</script>
+{% endif %}
 {% endblock %}

@@ -183,12 +183,6 @@ def create_docx_with_images_header_footer(folder_path, header_image_path, bottom
             run.add_picture(bottom_image_path, height=Cm(1.08))
         except Exception:
             pass
-    # Compulsory "Powered by" line
-    powered_para = footer_section.add_paragraph()
-    powered_para.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    powered_run = powered_para.add_run("Powered by METAPELLER LIMITED")
-    powered_run.font.size = Pt(8)
-    powered_run.font.color.rgb = RGBColor(128, 128, 128)
 
     if not os.path.exists(output_folder):
         os.makedirs(output_folder)
