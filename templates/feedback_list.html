@@ -1,0 +1,273 @@
+{% extends "base.html" %}
+
+{% block title %}Feedback Dashboard{% endblock %}
+
+{% block extra_css %}
+      .fb-page {
+        padding: 40px 0 60px;
+      }
+      .fb-page-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 28px;
+        flex-wrap: wrap;
+        gap: 16px;
+      }
+      .fb-page-header h1 {
+        font-size: 1.5rem;
+        font-weight: 800;
+        color: var(--text-dark);
+        margin: 0;
+      }
+      .fb-page-header .fb-count {
+        font-size: 0.85rem;
+        color: var(--text-muted);
+      }
+
+      /* Filter Tabs */
+      .fb-filters {
+        display: flex;
+        gap: 8px;
+        margin-bottom: 24px;
+        flex-wrap: wrap;
+      }
+      .fb-filter-tab {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 8px 16px;
+        border-radius: 20px;
+        font-size: 0.82rem;
+        font-weight: 600;
+        text-decoration: none;
+        transition: all 0.2s;
+        border: 1px solid var(--border);
+        background: white;
+        color: var(--text-body);
+      }
+      .fb-filter-tab:hover {
+        border-color: var(--primary);
+        color: var(--primary);
+        background: var(--primary-light);
+      }
+      .fb-filter-tab.active {
+        background: var(--primary);
+        color: white;
+        border-color: var(--primary);
+      }
+      .fb-filter-tab .tab-count {
+        background: rgba(0,0,0,0.1);
+        padding: 1px 7px;
+        border-radius: 10px;
+        font-size: 0.72rem;
+      }
+      .fb-filter-tab.active .tab-count {
+        background: rgba(255,255,255,0.25);
+      }
+
+      /* Feedback Table / Card List */
+      .fb-list {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+      }
+      .fb-item {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        background: white;
+        border: 1px solid var(--border);
+        border-radius: var(--radius-sm);
+        padding: 16px 20px;
+        text-decoration: none;
+        color: inherit;
+        transition: all 0.15s;
+      }
+      .fb-item:hover {
+        border-color: var(--primary);
+        box-shadow: var(--card-shadow);
+        transform: translateY(-1px);
+      }
+      .fb-status-icon {
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1rem;
+        flex-shrink: 0;
+      }
+      .fb-status-icon.new {
+        background: #eff6ff;
+        color: var(--primary);
+      }
+      .fb-status-icon.in_progress {
+        background: #fff7ed;
+        color: #ea580c;
+      }
+      .fb-status-icon.done {
+        background: #f0fdf4;
+        color: var(--accent);
+      }
+      .fb-item-body {
+        flex: 1;
+        min-width: 0;
+      }
+      .fb-item-title {
+        font-size: 0.9rem;
+        font-weight: 700;
+        color: var(--text-dark);
+        margin-bottom: 4px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .fb-item-meta {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-size: 0.78rem;
+        color: var(--text-muted);
+        flex-wrap: wrap;
+      }
+      .fb-cat-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        padding: 2px 10px;
+        border-radius: 12px;
+        font-size: 0.72rem;
+        font-weight: 600;
+      }
+      .fb-cat-badge.bug { background: #fef2f2; color: #dc2626; }
+      .fb-cat-badge.feature { background: #eff6ff; color: #2563eb; }
+      .fb-cat-badge.ui_ux { background: #faf5ff; color: #9333ea; }
+      .fb-cat-badge.general { background: #f0fdf4; color: #16a34a; }
+      .fb-file-count {
+        display: inline-flex;
+        align-items: center;
+        gap: 3px;
+        color: var(--text-muted);
+      }
+      .fb-item-arrow {
+        color: #cbd5e1;
+        font-size: 1.1rem;
+        flex-shrink: 0;
+      }
+
+      /* Empty State */
+      .fb-empty {
+        text-align: center;
+        padding: 60px 20px;
+        background: white;
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+      }
+      .fb-empty-icon {
+        font-size: 2.5rem;
+        color: #cbd5e1;
+        margin-bottom: 12px;
+      }
+      .fb-empty h3 {
+        font-size: 1rem;
+        font-weight: 700;
+        color: var(--text-dark);
+        margin-bottom: 6px;
+      }
+      .fb-empty p {
+        font-size: 0.85rem;
+        color: var(--text-muted);
+        margin: 0;
+      }
+
+      @media (max-width: 600px) {
+        .fb-item {
+          flex-direction: column;
+          align-items: flex-start;
+          gap: 10px;
+        }
+        .fb-item-arrow { display: none; }
+      }
+{% endblock %}
+
+{% block content %}
+    <div class="container fb-page">
+      <div class="fb-page-header">
+        <div>
+          <h1><i class="bi bi-inbox"></i> Feedback Dashboard</h1>
+          <span class="fb-count">{{ feedbacks|length }} item{{ 's' if feedbacks|length != 1 else '' }} total</span>
+        </div>
+      </div>
+
+      <!-- Filter Tabs -->
+      <div class="fb-filters">
+        <a href="/feedback" class="fb-filter-tab {{ 'active' if not status_filter else '' }}">
+          <i class="bi bi-grid-3x3-gap"></i> All
+        </a>
+        <a href="/feedback?status=new" class="fb-filter-tab {{ 'active' if status_filter == 'new' else '' }}">
+          <i class="bi bi-circle"></i> New
+        </a>
+        <a href="/feedback?status=in_progress" class="fb-filter-tab {{ 'active' if status_filter == 'in_progress' else '' }}">
+          <i class="bi bi-arrow-repeat"></i> In Progress
+        </a>
+        <a href="/feedback?status=done" class="fb-filter-tab {{ 'active' if status_filter == 'done' else '' }}">
+          <i class="bi bi-check-circle"></i> Done
+        </a>
+      </div>
+
+      {% if feedbacks %}
+        <div class="fb-list">
+          {% for fb in feedbacks %}
+            <a href="/feedback/{{ fb.id }}" class="fb-item">
+              <!-- Status Icon -->
+              <div class="fb-status-icon {{ fb.status }}">
+                {% if fb.status == 'new' %}
+                  <i class="bi bi-circle"></i>
+                {% elif fb.status == 'in_progress' %}
+                  <i class="bi bi-arrow-repeat"></i>
+                {% elif fb.status == 'done' %}
+                  <i class="bi bi-check-circle-fill"></i>
+                {% endif %}
+              </div>
+
+              <!-- Body -->
+              <div class="fb-item-body">
+                <div class="fb-item-title">{{ fb.title }}</div>
+                <div class="fb-item-meta">
+                  <span class="fb-cat-badge {{ fb.category }}">
+                    {% if fb.category == 'bug' %}<i class="bi bi-bug"></i>
+                    {% elif fb.category == 'feature' %}<i class="bi bi-lightbulb"></i>
+                    {% elif fb.category == 'ui_ux' %}<i class="bi bi-palette"></i>
+                    {% else %}<i class="bi bi-chat-text"></i>{% endif %}
+                    {{ fb.category|replace('_', '/') | title }}
+                  </span>
+                  <span><i class="bi bi-person"></i> {{ fb.author or 'Anonymous' }}</span>
+                  <span><i class="bi bi-clock"></i> {{ fb.created_at.strftime('%d %b %Y') if fb.created_at else '' }}</span>
+                  {% if fb.files and fb.files|length > 0 %}
+                    <span class="fb-file-count">
+                      <i class="bi bi-paperclip"></i> {{ fb.files|length }}
+                    </span>
+                  {% endif %}
+                </div>
+              </div>
+
+              <!-- Arrow -->
+              <div class="fb-item-arrow">
+                <i class="bi bi-chevron-right"></i>
+              </div>
+            </a>
+          {% endfor %}
+        </div>
+      {% else %}
+        <div class="fb-empty">
+          <div class="fb-empty-icon">
+            <i class="bi bi-inbox"></i>
+          </div>
+          <h3>No feedback items{% if status_filter %} with status "{{ status_filter|replace('_', ' ') }}"{% endif %}</h3>
+          <p>Feedback submitted via the widget will appear here.</p>
+        </div>
+      {% endif %}
+    </div>
+{% endblock %}

@@ -1,3 +1,5 @@
 Flask
 python-docx
 Pillow
+Flask-SQLAlchemy
+Flask-Login

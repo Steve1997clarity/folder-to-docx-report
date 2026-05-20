@@ -1,0 +1,672 @@
+{% extends "base.html" %}
+
+{% block title %}AI Document Automation for Building Surveyors{% endblock %}
+
+{% block extra_css %}
+      /* --- Hero --- */
+      .hero {
+        background: linear-gradient(160deg, #1e3a8a 0%, #1e40af 50%, #2563eb 100%);
+        padding: 80px 0 60px;
+        color: white;
+        text-align: center;
+      }
+      .hero h1 {
+        font-size: 2.5rem;
+        font-weight: 800;
+        letter-spacing: -0.03em;
+        margin-bottom: 16px;
+        line-height: 1.2;
+      }
+      .hero .lead {
+        font-size: 1.15rem;
+        opacity: 0.9;
+        max-width: 600px;
+        margin: 0 auto 32px;
+        line-height: 1.7;
+      }
+      .hero-cta {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        background: white;
+        color: var(--primary);
+        padding: 14px 28px;
+        border-radius: var(--radius-sm);
+        font-weight: 700;
+        font-size: 0.95rem;
+        text-decoration: none;
+        transition: all 0.2s;
+      }
+      .hero-cta:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(0,0,0,0.2); color: var(--primary); }
+
+      /* --- Problem Section --- */
+      .problem-section {
+        padding: 60px 0;
+        background: white;
+        border-bottom: 1px solid var(--border);
+      }
+      .problem-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 28px;
+        margin-top: 32px;
+      }
+      .problem-card {
+        padding: 28px 24px;
+        border-radius: var(--radius);
+        background: var(--bg-light);
+        border: 1px solid var(--border);
+      }
+      .problem-icon {
+        width: 44px;
+        height: 44px;
+        border-radius: 10px;
+        background: #fef2f2;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 14px;
+        color: #dc2626;
+      }
+      .problem-card h4 {
+        font-size: 0.95rem;
+        font-weight: 700;
+        margin-bottom: 6px;
+        color: var(--text-dark);
+      }
+      .problem-card p {
+        font-size: 0.85rem;
+        color: var(--text-muted);
+        margin: 0;
+      }
+
+      /* --- Solution Section --- */
+      .solution-section {
+        padding: 60px 0;
+      }
+      .solution-steps {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 24px;
+        margin-top: 32px;
+      }
+      .sol-step {
+        text-align: center;
+        padding: 32px 20px;
+        background: white;
+        border-radius: var(--radius);
+        border: 1px solid var(--border);
+        box-shadow: var(--card-shadow);
+      }
+      .sol-num {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background: var(--primary-light);
+        color: var(--primary);
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 800;
+        margin-bottom: 14px;
+      }
+      .sol-step h4 {
+        font-size: 0.95rem;
+        font-weight: 700;
+        margin-bottom: 6px;
+      }
+      .sol-step p {
+        font-size: 0.82rem;
+        color: var(--text-muted);
+        margin: 0;
+      }
+
+      /* --- Section Headers --- */
+      .section-header {
+        text-align: center;
+        margin-bottom: 8px;
+      }
+      .section-label {
+        display: inline-block;
+        font-size: 0.75rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: var(--primary);
+        background: var(--primary-light);
+        padding: 4px 12px;
+        border-radius: 20px;
+        margin-bottom: 12px;
+      }
+      .section-title {
+        font-size: 1.6rem;
+        font-weight: 800;
+        color: var(--text-dark);
+        letter-spacing: -0.02em;
+        margin-bottom: 8px;
+      }
+      .section-desc {
+        color: var(--text-muted);
+        font-size: 0.95rem;
+        max-width: 520px;
+        margin: 0 auto;
+      }
+
+      /* --- Demo Section --- */
+      .demo-section {
+        padding: 60px 0;
+        background: white;
+        border-top: 1px solid var(--border);
+        border-bottom: 1px solid var(--border);
+      }
+      .demo-card {
+        background: white;
+        border-radius: var(--radius);
+        box-shadow: var(--card-shadow);
+        overflow: hidden;
+        transition: all 0.2s ease;
+        border: 1px solid var(--border);
+      }
+      .demo-card:hover {
+        box-shadow: var(--card-shadow-lg);
+        transform: translateY(-3px);
+      }
+      .thumb-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 2px;
+        background: #e2e8f0;
+      }
+      .thumb-img {
+        width: 100%;
+        aspect-ratio: 4/3;
+        object-fit: cover;
+        display: block;
+      }
+      .card-body { padding: 20px; }
+      .card-title {
+        font-weight: 700;
+        font-size: 1rem;
+        color: var(--text-dark);
+        margin-bottom: 6px;
+      }
+      .card-desc {
+        color: var(--text-muted);
+        font-size: 0.82rem;
+        margin-bottom: 14px;
+      }
+      .card-meta {
+        display: flex;
+        gap: 8px;
+        margin-bottom: 16px;
+        flex-wrap: wrap;
+      }
+      .badge-pill {
+        background: var(--primary-light);
+        color: var(--primary);
+        padding: 4px 10px;
+        border-radius: 20px;
+        font-size: 0.72rem;
+        font-weight: 600;
+      }
+      .btn-demo {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        background: var(--primary);
+        color: white;
+        border: none;
+        padding: 12px 20px;
+        border-radius: var(--radius-sm);
+        font-size: 0.85rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
+        width: 100%;
+        justify-content: center;
+        text-decoration: none;
+      }
+      .btn-demo:hover { background: var(--primary-hover); transform: translateY(-1px); color: white; }
+      a.btn-demo:visited { color: white; }
+
+      /* --- Upload Section --- */
+      .upload-section {
+        padding: 60px 0;
+      }
+      .upload-box {
+        background: white;
+        border-radius: var(--radius);
+        padding: 36px;
+        box-shadow: var(--card-shadow);
+        border: 1px solid var(--border);
+        max-width: 640px;
+        margin: 32px auto 0;
+      }
+      .dropzone {
+        border: 2px dashed #cbd5e1;
+        border-radius: var(--radius-sm);
+        padding: 44px 20px;
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.2s;
+        background: var(--bg-light);
+      }
+      .dropzone:hover, .dropzone.dragover {
+        border-color: var(--primary);
+        background: var(--primary-light);
+      }
+      .dropzone-icon { margin-bottom: 12px; color: #94a3b8; }
+      .dropzone-text { font-size: 0.9rem; color: var(--text-body); margin-bottom: 4px; }
+      .dropzone-hint { font-size: 0.78rem; color: #94a3b8; }
+      .file-count {
+        margin-top: 12px;
+        font-size: 0.85rem;
+        color: var(--accent);
+        font-weight: 600;
+        display: none;
+      }
+      .file-count.visible { display: block; }
+      .btn-upload {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        background: var(--accent);
+        color: white;
+        border: none;
+        padding: 14px 28px;
+        border-radius: var(--radius-sm);
+        font-size: 0.9rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
+        margin-top: 20px;
+      }
+      .btn-upload:hover:not(:disabled) { background: var(--accent-hover); transform: translateY(-1px); }
+      .btn-upload:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+      /* --- Branding Selector --- */
+      .branding-selector-label {
+        font-size: 0.82rem;
+        font-weight: 700;
+        color: var(--text-dark);
+        margin: 24px 0 12px;
+      }
+      .branding-options {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 12px;
+        margin-bottom: 8px;
+      }
+      .brand-opt {
+        border: 2px solid var(--border);
+        border-radius: var(--radius-sm);
+        padding: 14px 10px 12px;
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.2s;
+        background: white;
+        position: relative;
+      }
+      .brand-opt:hover { border-color: var(--primary); background: var(--primary-light); }
+      .brand-opt.selected { border-color: var(--primary); background: var(--primary-light); box-shadow: 0 0 0 1px var(--primary); }
+      .brand-opt .bo-check {
+        position: absolute; top: 8px; right: 8px;
+        width: 18px; height: 18px; border-radius: 50%;
+        background: var(--primary); color: white;
+        font-size: 11px; line-height: 18px; text-align: center;
+        display: none;
+      }
+      .brand-opt.selected .bo-check { display: block; }
+      .brand-opt .bo-preview {
+        height: 32px; max-width: 100%;
+        object-fit: contain;
+        margin-bottom: 6px;
+      }
+      .brand-opt .bo-name {
+        font-size: 0.78rem; font-weight: 600;
+        color: var(--text-dark); margin-bottom: 2px;
+      }
+      .brand-opt .bo-desc {
+        font-size: 0.68rem; color: var(--text-muted);
+      }
+      .custom-upload-area {
+        display: none;
+        margin-top: 12px;
+        padding: 14px;
+        background: var(--bg-light);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-sm);
+      }
+      .custom-upload-area.visible { display: block; }
+      .custom-upload-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+      }
+      .custom-file-card {
+        border: 2px dashed #cbd5e1;
+        border-radius: 8px;
+        padding: 12px 8px;
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.2s;
+        background: white;
+        position: relative;
+      }
+      .custom-file-card:hover { border-color: var(--primary); }
+      .custom-file-card.has-file { border-style: solid; border-color: var(--accent); background: #f0fdf4; }
+      .custom-file-card .cf-icon { color: #94a3b8; margin-bottom: 4px; }
+      .custom-file-card .cf-text { font-size: 0.75rem; color: var(--text-muted); }
+      .custom-file-card .cf-preview { max-height: 32px; max-width: 100%; object-fit: contain; margin-bottom: 4px; }
+      .custom-file-card .cf-remove {
+        position: absolute; top: 4px; right: 6px;
+        background: #ef4444; color: white; border: none;
+        border-radius: 50%; width: 18px; height: 18px;
+        font-size: 11px; line-height: 16px; cursor: pointer;
+        display: none; padding: 0;
+      }
+      .custom-file-card.has-file .cf-remove { display: block; }
+      .branding-powered {
+        font-size: 0.72rem; color: var(--text-muted);
+        text-align: center; margin-top: 8px;
+      }
+      @media (max-width: 540px) {
+        .branding-options { grid-template-columns: 1fr; }
+        .custom-upload-row { grid-template-columns: 1fr; }
+      }
+
+      /* --- Limits Notice --- */
+      .limits-notice {
+        background: #fffbeb;
+        border: 1px solid #fde68a;
+        border-radius: var(--radius-sm);
+        padding: 14px 18px;
+        margin-top: 20px;
+        font-size: 0.78rem;
+        color: #92400e;
+      }
+      .limits-notice strong { color: #78350f; }
+
+      @media (max-width: 768px) {
+        .hero h1 { font-size: 1.7rem; }
+        .hero { padding: 50px 0 40px; }
+        .problem-grid, .solution-steps { grid-template-columns: 1fr; }
+        .upload-box { padding: 24px 18px; }
+      }
+{% endblock %}
+
+{% block content %}
+    <!-- Hero -->
+    <section class="hero">
+      <div class="container">
+        <h1>AI-Driven Document Automation<br>for Building Surveyors</h1>
+        <p class="lead">Stop spending hours formatting inspection photos in Word. Upload your survey images and get a professionally branded report in seconds.</p>
+        <a href="#demo" class="hero-cta">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+          Try the Live Demo
+        </a>
+      </div>
+    </section>
+
+    <!-- Problem Statement -->
+    <section class="problem-section">
+      <div class="container">
+        <div class="section-header">
+          <span class="section-label">The Problem</span>
+          <h2 class="section-title">Report Formatting is a Time Sink</h2>
+          <p class="section-desc">Independent surveyors and small firms waste valuable hours on repetitive document formatting instead of focusing on professional expertise.</p>
+        </div>
+        <div class="problem-grid">
+          <div class="problem-card">
+            <div class="problem-icon">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            </div>
+            <h4>Hours Lost to Formatting</h4>
+            <p>Manually inserting, resizing, and labelling dozens of inspection photos in Word for every single report.</p>
+          </div>
+          <div class="problem-card">
+            <div class="problem-icon">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            </div>
+            <h4>No IT Support</h4>
+            <p>Independent practitioners and small firms operate without dedicated IT teams or enterprise software solutions.</p>
+          </div>
+          <div class="problem-card">
+            <div class="problem-icon">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+            </div>
+            <h4>Generic Tools Only</h4>
+            <p>Relying on generic Word processing software that was never designed for photo-heavy survey reports.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Solution -->
+    <section class="solution-section">
+      <div class="container">
+        <div class="section-header">
+          <span class="section-label">The Solution</span>
+          <h2 class="section-title">From Photos to Report in Seconds</h2>
+          <p class="section-desc">AI-powered automation handles the tedious formatting so surveyors can focus on what matters.</p>
+        </div>
+        <div class="solution-steps">
+          <div class="sol-step">
+            <div class="sol-num">1</div>
+            <h4>Upload Inspection Photos</h4>
+            <p>Select a folder of JPG images from your drone or camera. The system reads them automatically.</p>
+          </div>
+          <div class="sol-step">
+            <div class="sol-num">2</div>
+            <h4>AI Formats Your Report</h4>
+            <p>Photos are arranged in a professional grid with labels, branded headers, and company footers.</p>
+          </div>
+          <div class="sol-step">
+            <div class="sol-num">3</div>
+            <h4>Download &amp; Deliver</h4>
+            <p>Get a ready-to-send Word document. No manual resizing, no formatting, no wasted time.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Live Demo -->
+    <section class="demo-section" id="demo">
+      <div class="container">
+        <div class="section-header">
+          <span class="section-label">Live Demo</span>
+          <h2 class="section-title">Try It Yourself</h2>
+          <p class="section-desc">Click a sample dataset below to instantly generate a real report. No sign-up required.</p>
+        </div>
+        <div class="row mt-4">
+          {{ demo_cards_html|safe }}
+        </div>
+      </div>
+    </section>
+
+    <!-- Upload Your Own -->
+    <section class="upload-section" id="upload">
+      <div class="container">
+        <div class="section-header">
+          <span class="section-label">Try Your Own</span>
+          <h2 class="section-title">Upload Your Photos</h2>
+          <p class="section-desc">Test with your own inspection images and choose your report branding.</p>
+        </div>
+        <div class="upload-box">
+          <form id="upload-form" method="post" enctype="multipart/form-data">
+            <div class="dropzone" id="dropzone" onclick="document.getElementById('folder_files').click()">
+              <div class="dropzone-icon">
+                <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/><line x1="12" y1="11" x2="12" y2="17"/><polyline points="9 14 12 11 15 14"/></svg>
+              </div>
+              <div class="dropzone-text">Click to select a folder of JPG inspection images</div>
+              <div class="dropzone-hint">Supports folder upload with subfolders</div>
+            </div>
+            <input type="file" id="folder_files" name="folder_files" webkitdirectory directory multiple required style="display:none;">
+            <div class="file-count" id="file-count"></div>
+
+            <!-- Branding Selector -->
+            <input type="hidden" id="branding_preset" name="branding_preset" value="hkpc">
+            <div class="branding-selector-label">Report Branding</div>
+            <div class="branding-options">
+              <div class="brand-opt selected" data-preset="hkpc" onclick="selectBranding('hkpc')">
+                <div class="bo-check">&#10003;</div>
+                <img src="/branding/hkpc/header" class="bo-preview" alt="HKPC">
+                <div class="bo-name">HKPC</div>
+                <div class="bo-desc">Default</div>
+              </div>
+              <div class="brand-opt" data-preset="metapeller" onclick="selectBranding('metapeller')">
+                <div class="bo-check">&#10003;</div>
+                <img src="/branding/metapeller/header" class="bo-preview" alt="Metapeller">
+                <div class="bo-name">Metapeller</div>
+                <div class="bo-desc">Metapeller Limited</div>
+              </div>
+              <div class="brand-opt" data-preset="custom" onclick="selectBranding('custom')">
+                <div class="bo-check">&#10003;</div>
+                <svg class="bo-preview" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="1.5" style="height:32px;"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="11" x2="12" y2="17"/><line x1="9" y1="14" x2="15" y2="14"/></svg>
+                <div class="bo-name">Custom</div>
+                <div class="bo-desc">Upload your own</div>
+              </div>
+            </div>
+
+            <!-- Custom upload area (shown only when Custom is selected) -->
+            <div class="custom-upload-area" id="custom-upload-area">
+              <div class="custom-upload-row">
+                <div class="custom-file-card" id="custom-header-card" onclick="document.getElementById('header_image').click()">
+                  <button type="button" class="cf-remove" onclick="event.stopPropagation(); clearCustomFile('header');">&times;</button>
+                  <img id="custom-header-preview" class="cf-preview" style="display:none;" alt="Header">
+                  <div class="cf-icon" id="custom-header-icon">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/></svg>
+                  </div>
+                  <div class="cf-text" id="custom-header-text">Header Logo</div>
+                </div>
+                <div class="custom-file-card" id="custom-footer-card" onclick="document.getElementById('footer_image').click()">
+                  <button type="button" class="cf-remove" onclick="event.stopPropagation(); clearCustomFile('footer');">&times;</button>
+                  <img id="custom-footer-preview" class="cf-preview" style="display:none;" alt="Footer">
+                  <div class="cf-icon" id="custom-footer-icon">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="15" x2="21" y2="15"/></svg>
+                  </div>
+                  <div class="cf-text" id="custom-footer-text">Footer Contact</div>
+                </div>
+              </div>
+            </div>
+            <input type="file" id="header_image" name="header_image" accept=".png,.jpg,.jpeg" style="display:none;">
+            <input type="file" id="footer_image" name="footer_image" accept=".png,.jpg,.jpeg" style="display:none;">
+            <div class="branding-powered">All reports include "Powered by METAPELLER LIMITED"</div>
+
+            <div class="limits-notice">
+              <strong>Demo Limits:</strong> Max 20 images per report &middot; Max 5 MB per image &middot; 20 MB total upload &middot; JPG/JPEG only
+            </div>
+            <div class="text-center">
+              <button type="submit" class="btn-upload" id="upload-btn" disabled>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                Generate Report
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </section>
+{% endblock %}
+
+{% block extra_js %}
+    <script>
+      const fileInput = document.getElementById('folder_files');
+      const fileCount = document.getElementById('file-count');
+      const uploadBtn = document.getElementById('upload-btn');
+      const dropzone = document.getElementById('dropzone');
+
+      fileInput.addEventListener('change', function() {
+        const files = Array.from(this.files).filter(f => f.name.toLowerCase().match(/\.jpe?g$/));
+        if (files.length > 0) {
+          const count = Math.min(files.length, 20);
+          fileCount.textContent = count + ' JPG image' + (count !== 1 ? 's' : '') + ' ready' + (files.length > 20 ? ' (first 20 will be used)' : '');
+          fileCount.classList.add('visible');
+          uploadBtn.disabled = false;
+        } else {
+          fileCount.textContent = 'No JPG images found in selected folder';
+          fileCount.classList.add('visible');
+          fileCount.style.color = '#dc2626';
+          uploadBtn.disabled = true;
+        }
+      });
+
+      dropzone.addEventListener('dragover', function(e) { e.preventDefault(); this.classList.add('dragover'); });
+      dropzone.addEventListener('dragleave', function() { this.classList.remove('dragover'); });
+      dropzone.addEventListener('drop', function(e) { e.preventDefault(); this.classList.remove('dragover'); });
+
+      document.getElementById('upload-form').addEventListener('submit', function() {
+        uploadBtn.disabled = true;
+        uploadBtn.innerHTML = '<span class="spinner"></span> Generating Report...';
+      });
+
+      function handleDemoClick(btn) {
+        btn.style.pointerEvents = 'none';
+        btn.style.opacity = '0.7';
+        btn.innerHTML = '<span class="spinner"></span> Downloading...';
+        // Re-enable after 8 seconds (file should have downloaded by then)
+        setTimeout(function() {
+          btn.style.pointerEvents = '';
+          btn.style.opacity = '';
+          btn.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg> Generate Sample Report';
+        }, 8000);
+      }
+
+      // --- Branding preset selector ---
+      function selectBranding(preset) {
+        document.getElementById('branding_preset').value = preset;
+        document.querySelectorAll('.brand-opt').forEach(function(el) {
+          el.classList.toggle('selected', el.dataset.preset === preset);
+        });
+        var customArea = document.getElementById('custom-upload-area');
+        if (preset === 'custom') {
+          customArea.classList.add('visible');
+        } else {
+          customArea.classList.remove('visible');
+        }
+      }
+
+      // Custom file upload preview
+      function setupCustomFile(type) {
+        var input = document.getElementById(type + '_image');
+        var card = document.getElementById('custom-' + type + '-card');
+        var preview = document.getElementById('custom-' + type + '-preview');
+        var icon = document.getElementById('custom-' + type + '-icon');
+        var text = document.getElementById('custom-' + type + '-text');
+        input.addEventListener('change', function() {
+          if (this.files && this.files[0]) {
+            var reader = new FileReader();
+            reader.onload = function(e) {
+              preview.src = e.target.result;
+              preview.style.display = 'block';
+              icon.style.display = 'none';
+              text.textContent = input.files[0].name;
+              card.classList.add('has-file');
+            };
+            reader.readAsDataURL(this.files[0]);
+          }
+        });
+      }
+      setupCustomFile('header');
+      setupCustomFile('footer');
+
+      function clearCustomFile(type) {
+        var input = document.getElementById(type + '_image');
+        var card = document.getElementById('custom-' + type + '-card');
+        var preview = document.getElementById('custom-' + type + '-preview');
+        var icon = document.getElementById('custom-' + type + '-icon');
+        var text = document.getElementById('custom-' + type + '-text');
+        input.value = '';
+        preview.style.display = 'none';
+        preview.src = '';
+        icon.style.display = '';
+        text.textContent = type === 'header' ? 'Header Logo' : 'Footer Contact';
+        card.classList.remove('has-file');
+      }
+
+      // Smooth scroll for CTA
+      document.querySelector('.hero-cta').addEventListener('click', function(e) {
+        e.preventDefault();
+        document.getElementById('demo').scrollIntoView({ behavior: 'smooth' });
+      });
+    </script>
+{% endblock %}

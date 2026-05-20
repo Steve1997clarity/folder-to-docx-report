@@ -1,0 +1,325 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{% block title %}AI Document Automation for Building Surveyors{% endblock %}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
+    <style>
+      :root {
+        --primary: #1e40af;
+        --primary-hover: #1e3a8a;
+        --primary-light: #eff6ff;
+        --accent: #059669;
+        --accent-hover: #047857;
+        --text-dark: #0f172a;
+        --text-body: #334155;
+        --text-muted: #64748b;
+        --bg-light: #f8fafc;
+        --border: #e2e8f0;
+        --card-shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+        --card-shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.08), 0 4px 6px -4px rgba(0,0,0,0.04);
+        --radius: 16px;
+        --radius-sm: 10px;
+      }
+      * { box-sizing: border-box; }
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+        color: var(--text-body);
+        background: var(--bg-light);
+        margin: 0;
+        line-height: 1.6;
+      }
+      .nav-bar {
+        background: white;
+        border-bottom: 1px solid var(--border);
+        padding: 14px 0;
+        position: sticky;
+        top: 0;
+        z-index: 100;
+      }
+      .nav-brand {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        text-decoration: none;
+      }
+      .nav-logo { height: 32px; object-fit: contain; }
+      .nav-divider { width: 1px; height: 24px; background: var(--border); }
+      .nav-product { font-weight: 700; font-size: 0.9rem; color: var(--text-dark); letter-spacing: -0.01em; }
+      .nav-tag {
+        font-size: 0.65rem; background: var(--primary-light); color: var(--primary);
+        padding: 2px 8px; border-radius: 4px; font-weight: 600; margin-left: 6px;
+      }
+      .nav-links { display: flex; align-items: center; gap: 16px; margin-left: auto; }
+      .nav-links a {
+        font-size: 0.82rem; color: var(--text-muted); text-decoration: none;
+        font-weight: 500; transition: color 0.2s;
+      }
+      .nav-links a:hover { color: var(--primary); }
+      .nav-badge {
+        background: #ef4444; color: white; font-size: 0.65rem;
+        padding: 1px 6px; border-radius: 10px; font-weight: 700; margin-left: 4px;
+      }
+      .footer {
+        background: var(--text-dark); color: #94a3b8;
+        padding: 40px 0; text-align: center; font-size: 0.8rem;
+      }
+      .footer p { margin: 4px 0; }
+      .spinner {
+        display: inline-block; width: 14px; height: 14px;
+        border: 2px solid rgba(255,255,255,0.3); border-radius: 50%;
+        border-top-color: white; animation: spin 0.6s linear infinite;
+      }
+      @keyframes spin { to { transform: rotate(360deg); } }
+
+      /* Feedback Widget */
+      .feedback-fab {
+        position: fixed; bottom: 28px; right: 28px; z-index: 9999;
+        width: 56px; height: 56px; border-radius: 50%;
+        background: var(--primary); color: white; border: none;
+        box-shadow: 0 4px 14px rgba(30,64,175,0.4);
+        cursor: pointer; transition: all 0.2s;
+        display: flex; align-items: center; justify-content: center;
+      }
+      .feedback-fab:hover { transform: scale(1.08); box-shadow: 0 6px 20px rgba(30,64,175,0.5); }
+      .feedback-fab i { font-size: 22px; }
+
+      .feedback-panel {
+        position: fixed; top: 0; right: -400px; width: 380px; height: 100vh;
+        background: white; z-index: 10000; box-shadow: -4px 0 20px rgba(0,0,0,0.12);
+        transition: right 0.3s ease; display: flex; flex-direction: column;
+      }
+      .feedback-panel.open { right: 0; }
+      .feedback-overlay {
+        position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+        background: rgba(0,0,0,0.3); z-index: 9998;
+        display: none; opacity: 0; transition: opacity 0.3s;
+      }
+      .feedback-overlay.open { display: block; opacity: 1; }
+      .fp-header {
+        padding: 20px 24px; border-bottom: 1px solid var(--border);
+        display: flex; align-items: center; justify-content: space-between;
+      }
+      .fp-header h3 { font-size: 1rem; font-weight: 700; color: var(--text-dark); margin: 0; }
+      .fp-close {
+        background: none; border: none; font-size: 1.3rem;
+        color: var(--text-muted); cursor: pointer; padding: 4px;
+      }
+      .fp-body { padding: 24px; flex: 1; overflow-y: auto; }
+      .fp-body label {
+        font-size: 0.8rem; font-weight: 600; color: var(--text-dark);
+        display: block; margin-bottom: 6px; margin-top: 16px;
+      }
+      .fp-body label:first-child { margin-top: 0; }
+      .fp-body input[type="text"], .fp-body textarea {
+        width: 100%; border: 1px solid var(--border); border-radius: 8px;
+        padding: 10px 12px; font-size: 0.85rem; font-family: inherit;
+        transition: border-color 0.2s;
+      }
+      .fp-body input[type="text"]:focus, .fp-body textarea:focus {
+        outline: none; border-color: var(--primary);
+      }
+      .fp-body textarea { resize: vertical; min-height: 80px; }
+      .fp-categories { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+      .fp-cat {
+        border: 2px solid var(--border); border-radius: 8px; padding: 10px 8px;
+        text-align: center; cursor: pointer; transition: all 0.2s; background: white;
+        font-size: 0.78rem; font-weight: 600; color: var(--text-body);
+      }
+      .fp-cat:hover { border-color: var(--primary); background: var(--primary-light); }
+      .fp-cat.selected { border-color: var(--primary); background: var(--primary-light); color: var(--primary); }
+      .fp-cat i { display: block; font-size: 1.1rem; margin-bottom: 4px; }
+      .fp-file-drop {
+        border: 2px dashed #cbd5e1; border-radius: 8px; padding: 20px;
+        text-align: center; cursor: pointer; transition: all 0.2s; background: var(--bg-light);
+        font-size: 0.8rem; color: var(--text-muted);
+      }
+      .fp-file-drop:hover { border-color: var(--primary); background: var(--primary-light); }
+      .fp-file-list { margin-top: 8px; font-size: 0.78rem; color: var(--accent); }
+      .fp-submit {
+        width: 100%; padding: 12px; border: none; border-radius: 8px;
+        background: var(--primary); color: white; font-weight: 600;
+        font-size: 0.9rem; cursor: pointer; margin-top: 20px; transition: all 0.2s;
+      }
+      .fp-submit:hover { background: var(--primary-hover); }
+      .fp-submit:disabled { opacity: 0.5; cursor: not-allowed; }
+      .fp-success {
+        text-align: center; padding: 40px 20px;
+        display: none; flex-direction: column; align-items: center; gap: 12px;
+      }
+      .fp-success i { font-size: 48px; color: var(--accent); }
+      .fp-success h4 { font-size: 1rem; font-weight: 700; color: var(--text-dark); margin: 0; }
+      .fp-success p { font-size: 0.85rem; color: var(--text-muted); margin: 0; }
+
+      @media (max-width: 480px) {
+        .feedback-panel { width: 100%; right: -100%; }
+      }
+
+      {% block extra_css %}{% endblock %}
+    </style>
+</head>
+<body>
+    <!-- Nav -->
+    <nav class="nav-bar">
+      <div class="container d-flex align-items-center">
+        <a href="/" class="nav-brand">
+          <img src="/branding/metapeller/header" alt="Metapeller Limited" class="nav-logo">
+          <div class="nav-divider"></div>
+          <span class="nav-tag">Prototype</span>
+        </a>
+        <div class="nav-links">
+          <a href="/progress"><i class="bi bi-list-check"></i> Progress</a>
+          {% if is_admin %}
+          <a href="/feedback">
+            <i class="bi bi-inbox"></i> Feedback
+            {% if new_feedback_count %}<span class="nav-badge">{{ new_feedback_count }}</span>{% endif %}
+          </a>
+          <a href="/logout"><i class="bi bi-box-arrow-right"></i></a>
+          {% else %}
+          <a href="/login"><i class="bi bi-person"></i> Admin</a>
+          {% endif %}
+        </div>
+      </div>
+    </nav>
+
+    {% block content %}{% endblock %}
+
+    <footer class="footer">
+      <div class="container">
+        <p><strong style="color:#e2e8f0;">Metapeller Limited</strong> &mdash; Prototype Demonstration</p>
+        <p>AI-Driven Document Automation for Building Survey Professionals</p>
+        <p style="margin-top: 12px; font-size: 0.72rem; color: #475569;">White-label platform. Logos, headers, footers, and layouts are fully customisable per client.</p>
+      </div>
+    </footer>
+
+    <!-- Feedback Widget -->
+    <button class="feedback-fab" onclick="openFeedback()" title="Send Feedback">
+      <i class="bi bi-chat-dots-fill"></i>
+    </button>
+    <div class="feedback-overlay" id="fb-overlay" onclick="closeFeedback()"></div>
+    <div class="feedback-panel" id="fb-panel">
+      <div class="fp-header">
+        <h3><i class="bi bi-chat-dots"></i> Send Feedback</h3>
+        <button class="fp-close" onclick="closeFeedback()">&times;</button>
+      </div>
+      <div class="fp-body">
+        <form id="feedback-form" enctype="multipart/form-data">
+          <div id="fb-form-fields">
+            <label>Your Name</label>
+            <input type="text" id="fb-name" name="name" placeholder="e.g. Grace, Client Name" required>
+
+            <label>Category</label>
+            <div class="fp-categories">
+              <div class="fp-cat selected" data-cat="bug" onclick="selectCat(this)">
+                <i class="bi bi-bug"></i> Bug
+              </div>
+              <div class="fp-cat" data-cat="feature" onclick="selectCat(this)">
+                <i class="bi bi-lightbulb"></i> Feature
+              </div>
+              <div class="fp-cat" data-cat="ui_ux" onclick="selectCat(this)">
+                <i class="bi bi-palette"></i> UI/UX
+              </div>
+              <div class="fp-cat" data-cat="general" onclick="selectCat(this)">
+                <i class="bi bi-chat-text"></i> General
+              </div>
+            </div>
+            <input type="hidden" id="fb-category" name="category" value="bug">
+
+            <label>Title</label>
+            <input type="text" id="fb-title" name="title" placeholder="Brief summary of the feedback" required>
+
+            <label>Description <span style="font-weight:400;color:var(--text-muted)">(optional)</span></label>
+            <textarea id="fb-desc" name="description" placeholder="Describe what you noticed, expected behavior, etc."></textarea>
+
+            <label>Attachments <span style="font-weight:400;color:var(--text-muted)">(optional)</span></label>
+            <div class="fp-file-drop" onclick="document.getElementById('fb-files').click()">
+              <i class="bi bi-cloud-upload" style="font-size:1.3rem;display:block;margin-bottom:4px;"></i>
+              Click to attach screenshots or files
+            </div>
+            <input type="file" id="fb-files" name="files" multiple accept=".png,.jpg,.jpeg,.gif,.pdf,.docx,.xlsx,.txt,.md" style="display:none;">
+            <div class="fp-file-list" id="fb-file-list"></div>
+
+            <input type="hidden" id="fb-page" name="page_context" value="">
+
+            <button type="submit" class="fp-submit" id="fb-submit-btn">Submit Feedback</button>
+          </div>
+          <div class="fp-success" id="fb-success">
+            <i class="bi bi-check-circle-fill"></i>
+            <h4>Feedback Submitted!</h4>
+            <p>Thank you. We'll review your feedback and update the progress board.</p>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <script>
+      // Feedback widget
+      function openFeedback() {
+        document.getElementById('fb-panel').classList.add('open');
+        document.getElementById('fb-overlay').classList.add('open');
+        document.getElementById('fb-page').value = window.location.pathname;
+        document.getElementById('fb-form-fields').style.display = '';
+        document.getElementById('fb-success').style.display = 'none';
+      }
+      function closeFeedback() {
+        document.getElementById('fb-panel').classList.remove('open');
+        document.getElementById('fb-overlay').classList.remove('open');
+      }
+      function selectCat(el) {
+        document.querySelectorAll('.fp-cat').forEach(c => c.classList.remove('selected'));
+        el.classList.add('selected');
+        document.getElementById('fb-category').value = el.dataset.cat;
+      }
+      document.getElementById('fb-files').addEventListener('change', function() {
+        var list = document.getElementById('fb-file-list');
+        if (this.files.length > 0) {
+          var names = Array.from(this.files).map(f => f.name);
+          list.textContent = names.join(', ');
+        } else {
+          list.textContent = '';
+        }
+      });
+      document.getElementById('feedback-form').addEventListener('submit', function(e) {
+        e.preventDefault();
+        var btn = document.getElementById('fb-submit-btn');
+        btn.disabled = true;
+        btn.textContent = 'Submitting...';
+        var fd = new FormData(this);
+        fetch('/feedback/submit', { method: 'POST', body: fd })
+          .then(r => r.json())
+          .then(data => {
+            if (data.success) {
+              document.getElementById('fb-form-fields').style.display = 'none';
+              document.getElementById('fb-success').style.display = 'flex';
+              setTimeout(function() { closeFeedback(); resetFeedbackForm(); }, 3000);
+            } else {
+              alert('Error: ' + (data.error || 'Unknown error'));
+              btn.disabled = false;
+              btn.textContent = 'Submit Feedback';
+            }
+          })
+          .catch(function() {
+            alert('Network error. Please try again.');
+            btn.disabled = false;
+            btn.textContent = 'Submit Feedback';
+          });
+      });
+      function resetFeedbackForm() {
+        var form = document.getElementById('feedback-form');
+        form.reset();
+        document.getElementById('fb-file-list').textContent = '';
+        document.querySelectorAll('.fp-cat').forEach(function(c, i) {
+          c.classList.toggle('selected', i === 0);
+        });
+        document.getElementById('fb-category').value = 'bug';
+        document.getElementById('fb-submit-btn').disabled = false;
+        document.getElementById('fb-submit-btn').textContent = 'Submit Feedback';
+        document.getElementById('fb-form-fields').style.display = '';
+        document.getElementById('fb-success').style.display = 'none';
+      }
+    </script>
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

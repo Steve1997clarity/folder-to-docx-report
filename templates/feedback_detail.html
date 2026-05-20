@@ -1,0 +1,364 @@
+{% extends "base.html" %}
+
+{% block title %}{{ feedback.title }} - Feedback{% endblock %}
+
+{% block extra_css %}
+      .fd-page {
+        padding: 40px 0 60px;
+        max-width: 760px;
+        margin: 0 auto;
+      }
+      .fd-back {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 0.82rem;
+        color: var(--text-muted);
+        text-decoration: none;
+        font-weight: 600;
+        margin-bottom: 20px;
+        transition: color 0.2s;
+      }
+      .fd-back:hover { color: var(--primary); }
+
+      .fd-card {
+        background: white;
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        box-shadow: var(--card-shadow);
+        overflow: hidden;
+      }
+      .fd-header {
+        padding: 28px 28px 20px;
+        border-bottom: 1px solid var(--border);
+      }
+      .fd-header-top {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 16px;
+        margin-bottom: 16px;
+        flex-wrap: wrap;
+      }
+      .fd-title {
+        font-size: 1.3rem;
+        font-weight: 800;
+        color: var(--text-dark);
+        margin: 0;
+        line-height: 1.3;
+      }
+      .fd-status-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        padding: 5px 14px;
+        border-radius: 20px;
+        font-size: 0.78rem;
+        font-weight: 700;
+        white-space: nowrap;
+      }
+      .fd-status-badge.new {
+        background: #eff6ff;
+        color: var(--primary);
+      }
+      .fd-status-badge.in_progress {
+        background: #fff7ed;
+        color: #ea580c;
+      }
+      .fd-status-badge.done {
+        background: #f0fdf4;
+        color: var(--accent);
+      }
+      .fd-meta {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        font-size: 0.82rem;
+        color: var(--text-muted);
+        flex-wrap: wrap;
+      }
+      .fd-meta-item {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+      }
+      .fd-cat-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        padding: 3px 12px;
+        border-radius: 12px;
+        font-size: 0.75rem;
+        font-weight: 600;
+      }
+      .fd-cat-badge.bug { background: #fef2f2; color: #dc2626; }
+      .fd-cat-badge.feature { background: #eff6ff; color: #2563eb; }
+      .fd-cat-badge.ui_ux { background: #faf5ff; color: #9333ea; }
+      .fd-cat-badge.general { background: #f0fdf4; color: #16a34a; }
+
+      .fd-body {
+        padding: 24px 28px;
+      }
+      .fd-section-label {
+        font-size: 0.75rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: var(--text-muted);
+        margin-bottom: 8px;
+      }
+      .fd-description {
+        font-size: 0.9rem;
+        color: var(--text-body);
+        line-height: 1.7;
+        margin-bottom: 24px;
+        white-space: pre-wrap;
+      }
+      .fd-description.empty {
+        color: var(--text-muted);
+        font-style: italic;
+      }
+      .fd-page-context {
+        font-size: 0.82rem;
+        color: var(--text-muted);
+        background: var(--bg-light);
+        padding: 8px 12px;
+        border-radius: 6px;
+        display: inline-block;
+        margin-bottom: 24px;
+      }
+
+      /* Attachments */
+      .fd-attachments {
+        margin-bottom: 24px;
+      }
+      .fd-file-list {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+      .fd-file-item {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 10px 14px;
+        background: var(--bg-light);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        text-decoration: none;
+        color: var(--text-body);
+        font-size: 0.82rem;
+        font-weight: 500;
+        transition: all 0.15s;
+      }
+      .fd-file-item:hover {
+        border-color: var(--primary);
+        color: var(--primary);
+      }
+      .fd-file-item i {
+        font-size: 1rem;
+        color: var(--text-muted);
+      }
+      .fd-file-item:hover i { color: var(--primary); }
+      .fd-file-name { flex: 1; }
+      .fd-file-dl { font-size: 0.75rem; color: var(--primary); font-weight: 600; }
+
+      /* Status Actions */
+      .fd-actions {
+        padding: 20px 28px;
+        border-top: 1px solid var(--border);
+        background: var(--bg-light);
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex-wrap: wrap;
+      }
+      .fd-actions-label {
+        font-size: 0.78rem;
+        font-weight: 700;
+        color: var(--text-dark);
+        margin-right: 8px;
+      }
+      .btn-status {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        padding: 8px 16px;
+        border-radius: 8px;
+        font-size: 0.8rem;
+        font-weight: 600;
+        border: 1px solid var(--border);
+        background: white;
+        color: var(--text-body);
+        cursor: pointer;
+        transition: all 0.2s;
+      }
+      .btn-status:hover {
+        border-color: var(--primary);
+        color: var(--primary);
+        background: var(--primary-light);
+      }
+      .btn-status.active {
+        background: var(--primary);
+        color: white;
+        border-color: var(--primary);
+        cursor: default;
+      }
+      .btn-status.active:hover {
+        background: var(--primary);
+        color: white;
+      }
+
+      .fd-danger-zone {
+        padding: 20px 28px;
+        border-top: 1px solid var(--border);
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+      }
+      .btn-delete {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        padding: 8px 16px;
+        border-radius: 8px;
+        font-size: 0.8rem;
+        font-weight: 600;
+        border: 1px solid #fecaca;
+        background: #fef2f2;
+        color: #dc2626;
+        cursor: pointer;
+        transition: all 0.2s;
+      }
+      .btn-delete:hover {
+        background: #dc2626;
+        color: white;
+        border-color: #dc2626;
+      }
+
+      @media (max-width: 600px) {
+        .fd-page { padding: 24px 0 40px; }
+        .fd-header, .fd-body, .fd-actions, .fd-danger-zone { padding-left: 18px; padding-right: 18px; }
+        .fd-header-top { flex-direction: column; }
+      }
+{% endblock %}
+
+{% block content %}
+    <div class="container fd-page">
+      <a href="/feedback" class="fd-back">
+        <i class="bi bi-arrow-left"></i> Back to Feedback Dashboard
+      </a>
+
+      <div class="fd-card">
+        <!-- Header -->
+        <div class="fd-header">
+          <div class="fd-header-top">
+            <h1 class="fd-title">{{ feedback.title }}</h1>
+            <span class="fd-status-badge {{ feedback.status }}">
+              {% if feedback.status == 'new' %}
+                <i class="bi bi-circle"></i> New
+              {% elif feedback.status == 'in_progress' %}
+                <i class="bi bi-arrow-repeat"></i> In Progress
+              {% elif feedback.status == 'done' %}
+                <i class="bi bi-check-circle-fill"></i> Done
+              {% endif %}
+            </span>
+          </div>
+          <div class="fd-meta">
+            <span class="fd-cat-badge {{ feedback.category }}">
+              {% if feedback.category == 'bug' %}<i class="bi bi-bug"></i>
+              {% elif feedback.category == 'feature' %}<i class="bi bi-lightbulb"></i>
+              {% elif feedback.category == 'ui_ux' %}<i class="bi bi-palette"></i>
+              {% else %}<i class="bi bi-chat-text"></i>{% endif %}
+              {{ feedback.category|replace('_', '/') | title }}
+            </span>
+            <span class="fd-meta-item">
+              <i class="bi bi-person"></i> {{ feedback.author or 'Anonymous' }}
+            </span>
+            <span class="fd-meta-item">
+              <i class="bi bi-clock"></i> {{ feedback.created_at.strftime('%d %b %Y at %H:%M') if feedback.created_at else 'Unknown date' }}
+            </span>
+          </div>
+        </div>
+
+        <!-- Body -->
+        <div class="fd-body">
+          {% if feedback.page_context %}
+            <div class="fd-section-label">Page Context</div>
+            <div class="fd-page-context">
+              <i class="bi bi-link-45deg"></i> {{ feedback.page_context }}
+            </div>
+          {% endif %}
+
+          <div class="fd-section-label">Description</div>
+          {% if feedback.description %}
+            <div class="fd-description">{{ feedback.description }}</div>
+          {% else %}
+            <div class="fd-description empty">No description provided.</div>
+          {% endif %}
+
+          <!-- Attachments -->
+          {% if feedback.files and feedback.files|length > 0 %}
+            <div class="fd-attachments">
+              <div class="fd-section-label">Attachments ({{ feedback.files|length }})</div>
+              <div class="fd-file-list">
+                {% for file in feedback.files %}
+                  <a href="/uploads/{{ file.stored_name }}" class="fd-file-item" target="_blank">
+                    <i class="bi bi-file-earmark"></i>
+                    <span class="fd-file-name">{{ file.original_name }}</span>
+                    <span class="fd-file-dl"><i class="bi bi-download"></i> Download</span>
+                  </a>
+                {% endfor %}
+              </div>
+            </div>
+          {% endif %}
+        </div>
+
+        <!-- Status Update Actions -->
+        <div class="fd-actions">
+          <span class="fd-actions-label">Update Status:</span>
+          {% if feedback.status != 'new' %}
+            <form method="post" action="/feedback/{{ feedback.id }}/status" style="display:inline;">
+              <input type="hidden" name="status" value="new">
+              <button type="submit" class="btn-status">
+                <i class="bi bi-circle"></i> New
+              </button>
+            </form>
+          {% else %}
+            <span class="btn-status active"><i class="bi bi-circle"></i> New</span>
+          {% endif %}
+
+          {% if feedback.status != 'in_progress' %}
+            <form method="post" action="/feedback/{{ feedback.id }}/status" style="display:inline;">
+              <input type="hidden" name="status" value="in_progress">
+              <button type="submit" class="btn-status">
+                <i class="bi bi-arrow-repeat"></i> In Progress
+              </button>
+            </form>
+          {% else %}
+            <span class="btn-status active"><i class="bi bi-arrow-repeat"></i> In Progress</span>
+          {% endif %}
+
+          {% if feedback.status != 'done' %}
+            <form method="post" action="/feedback/{{ feedback.id }}/status" style="display:inline;">
+              <input type="hidden" name="status" value="done">
+              <button type="submit" class="btn-status">
+                <i class="bi bi-check-circle-fill"></i> Done
+              </button>
+            </form>
+          {% else %}
+            <span class="btn-status active"><i class="bi bi-check-circle-fill"></i> Done</span>
+          {% endif %}
+        </div>
+
+        <!-- Delete -->
+        <div class="fd-danger-zone">
+          <form method="post" action="/feedback/{{ feedback.id }}/delete" onsubmit="return confirm('Are you sure you want to delete this feedback item? This cannot be undone.');">
+            <button type="submit" class="btn-delete">
+              <i class="bi bi-trash3"></i> Delete Feedback
+            </button>
+          </form>
+        </div>
+      </div>
+    </div>
+{% endblock %}
