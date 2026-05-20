@@ -19,7 +19,8 @@ jobs:
           port: 22
           script: |
             cd /home/ec2-user/folder-to-docx-report
-            git pull origin main
+            git fetch origin main
+            git reset --hard origin/main
             pip3.12 install -r requirements.txt
             sudo systemctl restart docx-report.service
             sleep 3
