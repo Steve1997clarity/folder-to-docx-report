@@ -97,7 +97,7 @@ DEMO_PRESETS = {
 
 def create_docx_with_images_header_footer(folder_path, header_image_path, bottom_image_path,
                                            output_docx="output.docx", output_folder="OUTPUT",
-                                           image_width=Inches(2), images_per_row=2):
+                                           image_width=Inches(2.2), images_per_row=3):
     doc = Document()
     section = doc.sections[0]
     section.top_margin = Inches(0.5)
@@ -137,9 +137,9 @@ def create_docx_with_images_header_footer(folder_path, header_image_path, bottom
                 try:
                     with Image.open(image_path) as img:
                         # Resize to max 600px wide for demo (smaller DOCX, faster download)
-                        if img.width > 600:
-                            ratio = 600 / img.width
-                            new_size = (600, int(img.height * ratio))
+                        if img.width > 450:
+                            ratio = 450 / img.width
+                            new_size = (450, int(img.height * ratio))
                             img = img.resize(new_size, Image.LANCZOS)
                         stream = BytesIO()
                         img.convert('RGB').save(stream, format='JPEG', quality=55)
@@ -166,8 +166,9 @@ def create_docx_with_images_header_footer(folder_path, header_image_path, bottom
         label_row = table.add_row().cells
         for idx, (stream, img_name) in enumerate(batch):
             para = label_row[idx].paragraphs[0]
-            para.text = img_name
-            para.paragraph_format.space_after = Pt(12)
+            run = para.add_run(img_name)
+            run.font.size = Pt(8)
+            para.paragraph_format.space_after = Pt(6)
 
     # Footer section
     footer_section = section.footer
