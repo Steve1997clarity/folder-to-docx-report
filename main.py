@@ -99,7 +99,7 @@ DEMO_PRESETS = {
 def create_docx_with_images_header_footer(folder_path, header_image_path, bottom_image_path,
                                            output_docx="output.docx", output_folder="OUTPUT",
                                            image_width=Inches(2.2), images_per_row=3,
-                                           photo_labels=None):
+                                           photo_labels=None, metadata=None):
     doc = Document()
     section = doc.sections[0]
     section.top_margin = Inches(0.5)
@@ -151,6 +151,31 @@ def create_docx_with_images_header_footer(folder_path, header_image_path, bottom
                     print(f"Skipping '{f}': {e}")
                 if len(valid_images) >= MAX_IMAGES:
                     break
+
+    # Metadata table (folder path info)
+    if metadata:
+        meta_fields = [
+            ('Master Folder', metadata.get('master', '')),
+            ('Folder', metadata.get('folder', '')),
+            ('Sub-Folder', metadata.get('subfolder', '')),
+            ('Path', metadata.get('path', '')),
+        ]
+        # Only add if at least one field has a value
+        if any(v for _, v in meta_fields):
+            meta_table = doc.add_table(rows=len(meta_fields), cols=2)
+            meta_table.alignment = WD_ALIGN_PARAGRAPH.LEFT
+            for row_idx, (label, value) in enumerate(meta_fields):
+                cell_label = meta_table.cell(row_idx, 0)
+                cell_value = meta_table.cell(row_idx, 1)
+                run_label = cell_label.paragraphs[0].add_run(label)
+                run_label.bold = True
+                run_label.font.size = Pt(9)
+                run_value = cell_value.paragraphs[0].add_run(': ' + value)
+                run_value.font.size = Pt(9)
+            # Add spacing after metadata table
+            spacer = doc.add_paragraph()
+            spacer.paragraph_format.space_before = Pt(4)
+            spacer.paragraph_format.space_after = Pt(4)
 
     table = doc.add_table(rows=0, cols=images_per_row)
     table.alignment = WD_ALIGN_PARAGRAPH.CENTER
@@ -376,6 +401,20 @@ def index():
             except (json.JSONDecodeError, TypeError):
                 photo_labels = None
 
+        # Parse folder metadata from frontend
+        metadata = None
+        meta_master = request.form.get('meta_master', '').strip()
+        meta_folder = request.form.get('meta_folder', '').strip()
+        meta_subfolder = request.form.get('meta_subfolder', '').strip()
+        meta_path = request.form.get('meta_path', '').strip()
+        if meta_master or meta_folder or meta_subfolder or meta_path:
+            metadata = {
+                'master': meta_master,
+                'folder': meta_folder,
+                'subfolder': meta_subfolder,
+                'path': meta_path,
+            }
+
         output_docx = "Survey_Report.docx"
         generated_docx_path = create_docx_with_images_header_footer(
             folder_path=upload_dir,
@@ -383,7 +422,8 @@ def index():
             bottom_image_path=bottom_image_path,
             output_docx=output_docx,
             output_folder=output_dir,
-            photo_labels=photo_labels
+            photo_labels=photo_labels,
+            metadata=metadata
         )
 
         with open(generated_docx_path, 'rb') as f:
