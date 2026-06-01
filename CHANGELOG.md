@@ -2,6 +2,15 @@
 
 All notable changes to the DOCX Report Generator.
 
+## [2026-06-01] Security Hardening + Enforced 3x4 Page Layout
+
+- **Security:** moved the Flask secret key to the `FLASK_SECRET_KEY` env var (random per-process fallback)
+- **Security:** admin passwords seeded from env vars (`ADMIN_PASSWORD` / `ERIC_PASSWORD` / `GARY_PASSWORD`) instead of hardcoded values
+- **Security:** added Flask-WTF CSRF protection on authenticated form/AJAX actions (login, feedback status update, delete); public report-generation and feedback-submission endpoints exempted by design
+- **Layout (METAPELLER comment 4.3):** enforced exactly 3 photos across x 4 rows down (12 per page) with an automatic page break between pages
+- Added `Flask-WTF` to `requirements.txt`; documented env vars in README
+- Verified live: `/`, `/progress`, `/login` return HTTP 200 with CSRF token present
+
 ## [2026-05-20] Phase 5 -- Photo Preview Grid with Drag-to-Replace
 
 - Added 3-column thumbnail preview grid after file selection
