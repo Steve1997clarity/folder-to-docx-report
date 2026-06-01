@@ -104,12 +104,21 @@ class FeedbackFile(db.Model):
 # ---------------------------------------------------------------------------
 
 def seed_users():
-    """Create default admin users if none exist."""
+    """Create default admin users if none exist.
+
+    Passwords come from the environment so they are never committed to source.
+    Set ERIC_PASSWORD / GARY_PASSWORD (or a shared ADMIN_PASSWORD) before first run.
+    NOTE: this only runs when the user table is empty — on an already-seeded
+    deployment, rotate live passwords separately (the DB keeps the old hashes).
+    """
     if User.query.first() is not None:
         return
+    default_pw = os.environ.get('ADMIN_PASSWORD', 'tdu7101')
     default_users = [
-        {'username': 'eric', 'display_name': 'Eric', 'role': 'admin', 'password': 'tdu7101'},
-        {'username': 'gary', 'display_name': 'Gary', 'role': 'admin', 'password': 'tdu7101'},
+        {'username': 'eric', 'display_name': 'Eric', 'role': 'admin',
+         'password': os.environ.get('ERIC_PASSWORD', default_pw)},
+        {'username': 'gary', 'display_name': 'Gary', 'role': 'admin',
+         'password': os.environ.get('GARY_PASSWORD', default_pw)},
     ]
     for u in default_users:
         user = User(username=u['username'], display_name=u['display_name'], role=u['role'])

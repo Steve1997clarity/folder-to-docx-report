@@ -3,3 +3,4 @@ python-docx
 Pillow
 Flask-SQLAlchemy
 Flask-Login
+Flask-WTF

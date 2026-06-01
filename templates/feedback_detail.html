@@ -319,6 +319,7 @@
           <span class="fd-actions-label">Update Status:</span>
           {% if feedback.status != 'new' %}
             <form method="post" action="/feedback/{{ feedback.id }}/status" style="display:inline;">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
               <input type="hidden" name="status" value="new">
               <button type="submit" class="btn-status">
                 <i class="bi bi-circle"></i> New
@@ -330,6 +331,7 @@
 
           {% if feedback.status != 'in_progress' %}
             <form method="post" action="/feedback/{{ feedback.id }}/status" style="display:inline;">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
               <input type="hidden" name="status" value="in_progress">
               <button type="submit" class="btn-status">
                 <i class="bi bi-arrow-repeat"></i> In Progress
@@ -341,6 +343,7 @@
 
           {% if feedback.status != 'done' %}
             <form method="post" action="/feedback/{{ feedback.id }}/status" style="display:inline;">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
               <input type="hidden" name="status" value="done">
               <button type="submit" class="btn-status">
                 <i class="bi bi-check-circle-fill"></i> Done
@@ -354,6 +357,7 @@
         <!-- Delete -->
         <div class="fd-danger-zone">
           <form method="post" action="/feedback/{{ feedback.id }}/delete" onsubmit="return confirm('Are you sure you want to delete this feedback item? This cannot be undone.');">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <button type="submit" class="btn-delete">
               <i class="bi bi-trash3"></i> Delete Feedback
             </button>

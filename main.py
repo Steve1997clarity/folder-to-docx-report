@@ -1,9 +1,11 @@
 import os
 import json
+import secrets
 import shutil
 from io import BytesIO
 from flask import Flask, request, send_file, render_template, Response
 from flask_login import LoginManager, current_user
+from flask_wtf import CSRFProtect
 from docx import Document
 from docx.shared import Inches, Pt, Cm, RGBColor
 from docx.enum.text import WD_ALIGN_PARAGRAPH
@@ -15,13 +17,19 @@ from feedback import db, feedback_bp, seed_users, User
 
 app = Flask(__name__)
 app.config['MAX_CONTENT_LENGTH'] = 20 * 1024 * 1024  # Demo limit: 20 MB max
-app.secret_key = 'secret-key'
+# Secret key: set FLASK_SECRET_KEY in the environment for stable sessions across
+# restarts. Falls back to a per-process random key (admins re-login on restart).
+app.secret_key = os.environ.get('FLASK_SECRET_KEY') or secrets.token_hex(32)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + os.path.join(os.getcwd(), 'data', 'feedback.db')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['UPLOAD_FOLDER'] = os.path.join(os.getcwd(), 'uploads')
 
 # Init extensions
 db.init_app(app)
+
+# CSRF protection for authenticated form/AJAX actions. The two public endpoints
+# (report generation and feedback submission) are exempted at the end of this file.
+csrf = CSRFProtect(app)
 
 login_manager = LoginManager()
 login_manager.init_app(app)
@@ -38,6 +46,7 @@ app.register_blueprint(feedback_bp)
 MAX_IMAGES = 20          # Max images per upload (demo limit)
 MAX_IMAGE_SIZE_MB = 5    # Max per-image size
 THUMB_SIZE = (300, 300)  # Thumbnail dimensions
+ROWS_PER_PAGE = 4        # Photo rows per page (3 across x 4 down = 12 photos/page)
 
 @app.errorhandler(413)
 def too_large(e):
@@ -177,31 +186,40 @@ def create_docx_with_images_header_footer(folder_path, header_image_path, bottom
             spacer.paragraph_format.space_before = Pt(4)
             spacer.paragraph_format.space_after = Pt(4)
 
-    table = doc.add_table(rows=0, cols=images_per_row)
-    table.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    # Layout: 3 photos across x 4 rows down = 12 photos per page (client request 4.3).
+    # A page break is inserted between pages so each page holds exactly one 3x4 grid.
+    images_per_page = images_per_row * ROWS_PER_PAGE
 
-    for i in range(0, len(valid_images), images_per_row):
-        batch = valid_images[i:i+images_per_row]
-        image_row = table.add_row().cells
-        for idx, (stream, img_name) in enumerate(batch):
-            para = image_row[idx].paragraphs[0]
-            run = para.add_run()
-            try:
-                run.add_picture(stream, width=image_width)
-            except Exception as e:
-                print(f"Error inserting '{img_name}': {e}")
-        label_row = table.add_row().cells
-        for idx, (stream, img_name) in enumerate(batch):
-            para = label_row[idx].paragraphs[0]
-            if photo_labels:
-                # Try exact match first, then strip numeric prefix (e.g., 001_)
-                stripped = img_name.split('_', 1)[1] if img_name[:3].isdigit() and '_' in img_name else img_name
-                label = photo_labels.get(img_name, photo_labels.get(stripped, img_name))
-            else:
-                label = img_name
-            run = para.add_run(label)
-            run.font.size = Pt(8)
-            para.paragraph_format.space_after = Pt(6)
+    for page_start in range(0, len(valid_images), images_per_page):
+        if page_start > 0:
+            doc.add_page_break()
+        page_images = valid_images[page_start:page_start + images_per_page]
+
+        table = doc.add_table(rows=0, cols=images_per_row)
+        table.alignment = WD_ALIGN_PARAGRAPH.CENTER
+
+        for i in range(0, len(page_images), images_per_row):
+            batch = page_images[i:i+images_per_row]
+            image_row = table.add_row().cells
+            for idx, (stream, img_name) in enumerate(batch):
+                para = image_row[idx].paragraphs[0]
+                run = para.add_run()
+                try:
+                    run.add_picture(stream, width=image_width)
+                except Exception as e:
+                    print(f"Error inserting '{img_name}': {e}")
+            label_row = table.add_row().cells
+            for idx, (stream, img_name) in enumerate(batch):
+                para = label_row[idx].paragraphs[0]
+                if photo_labels:
+                    # Try exact match first, then strip numeric prefix (e.g., 001_)
+                    stripped = img_name.split('_', 1)[1] if img_name[:3].isdigit() and '_' in img_name else img_name
+                    label = photo_labels.get(img_name, photo_labels.get(stripped, img_name))
+                else:
+                    label = img_name
+                run = para.add_run(label)
+                run.font.size = Pt(8)
+                para.paragraph_format.space_after = Pt(6)
 
     # Footer section
     footer_section = section.footer
@@ -470,6 +488,11 @@ def index():
             '''
 
         return render_template('index.html', demo_cards_html=demo_cards_html)
+
+# Public, unauthenticated endpoints — exempt from CSRF (callable without a session).
+# Admin actions (login, feedback status/delete) remain CSRF-protected.
+csrf.exempt(app.view_functions['index'])
+csrf.exempt(app.view_functions['feedback.feedback_submit'])
 
 if __name__ == '__main__':
     with app.app_context():
